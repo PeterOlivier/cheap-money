@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cheap Money? — The Real Cost of Equity</title>
+<meta name="description" content="Equity has no monthly payments. It's still not free. See the effective interest rate of your equity raise.">
+<meta property="og:title" content="Is Equity Cheap Money?">
+<meta property="og:description" content="Equity has no monthly payments. It's still not free. See the effective APR of your raise.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Is Equity Cheap Money?">
+<meta name="twitter:description" content="Equity has no monthly payments. It's still not free. See the effective APR of your raise.">
+<style>
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --border: #e5e5df;
+    --border-light: #f0f0eb;
+    --text: #1a1a18;
+    --text-secondary: #6b6b63;
+    --text-muted: #9b9b91;
+    --accent: #2c5282;
+    --accent-light: #ebf2fa;
+    --green: #276749;
+    --green-bg: #f0faf4;
+    --amber: #92600a;
+    --amber-bg: #fefce8;
+    --orange: #c2410c;
+    --orange-bg: #fff7ed;
+    --red: #b91c1c;
+    --red-bg: #fef2f2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-user-select: none;
+    user-select: none;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  /* Hero */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Rate display — full size, in flow */
+  .rate-display {
+    text-align: center;
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .rate-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+  .rate-value {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 4.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    transition: color 0.3s;
+    line-height: 1.1;
+  }
+  .rate-comparison {
+    margin-top: 0.5rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .rate-comparison strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Compact sticky bar — separate fixed element */
+  .sticky-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    padding: 0.55rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    transform: translateY(-100%);
+    transition: transform 0.25s ease;
+    pointer-events: none;
+  }
+  .sticky-bar.visible {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .sticky-bar .sticky-rate {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .sticky-bar .sticky-context {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    text-align: left;
+  }
+  .sticky-bar .sticky-context strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .rate-low { color: var(--green); }
+  .rate-med { color: var(--amber); }
+  .rate-high { color: var(--orange); }
+  .rate-extreme { color: var(--red); }
+
+  /* Comparison strip */
+  .strip-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .strip-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+  .strip {
+    position: relative;
+    height: 36px;
+    background: var(--border-light);
+    border-radius: 6px;
+    overflow: visible;
+  }
+  .strip-benchmarks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .strip-benchmark {
+    text-align: center;
+    flex: 1;
+  }
+  .strip-benchmark strong {
+    display: block;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 0.72rem;
+  }
+  .strip canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 6px;
+  }
+
+  /* Panels */
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width: 768px) {
+    .panels { grid-template-columns: 1fr; }
+    .rate-value { font-size: 3rem; }
+    h1 { font-size: 1.6rem; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+  .panel-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .panel-readout {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+    min-height: 2.65rem;
+  }
+  .panel-readout strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    cursor: crosshair;
+  }
+  .chart-wrap canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .hint {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 1.75rem;
+  }
+
+  /* Flip side */
+  .flipside {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .flipside h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+  .flipside-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 768px) {
+    .flipside-grid { grid-template-columns: 1fr; }
+  }
+  .flipside-item h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .flipside-item p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Math section */
+  .math-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .math-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: left;
+  }
+  .math-toggle:hover { background: var(--border-light); }
+  .math-arrow {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .math-content {
+    display: none;
+    padding: 0 1.5rem 1.5rem;
+  }
+  .math-content.open { display: block; }
+  .math-arrow.open { transform: rotate(180deg); }
+  .formula-block {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.88rem;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.25rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    line-height: 1.8;
+  }
+  .math-content p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+  }
+  footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Steel costs $800/ton.<br>What does a dollar of equity cost?</h1>
+    <p class="subtitle">
+      You price every input — materials, labor, equipment, land.
+      But the most expensive input might be the capital itself.
+    </p>
+  </header>
+
+  <div class="rate-display" id="rateDisplay">
+    <div class="rate-label">Effective Annual Interest Rate of Your Equity</div>
+    <div class="rate-value" id="rateValue">—</div>
+    <div class="rate-comparison" id="rateComparison"></div>
+  </div>
+
+  <div class="sticky-bar" id="stickyBar">
+    <span class="sticky-rate" id="stickyRate">—</span>
+    <span class="sticky-context" id="stickyContext"></span>
+  </div>
+
+  <p class="hint">Click or drag the dot on each chart to set your scenario.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-title">The Round</div>
+      <div class="panel-readout" id="roundReadout"></div>
+      <div class="chart-wrap" id="roundWrap">
+        <canvas id="roundChart"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">The Exit</div>
+      <div class="panel-readout" id="exitReadout"></div>
+      <div class="chart-wrap" id="exitWrap">
+        <canvas id="exitChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip-container">
+    <div class="strip-label">Your equity cost vs. other ways to finance the same thing</div>
+    <div class="strip">
+      <canvas id="stripChart"></canvas>
+    </div>
+    <div class="strip-benchmarks">
+      <div class="strip-benchmark"><strong>7%</strong>SBA Loan</div>
+      <div class="strip-benchmark"><strong>10%</strong>Equip. Lease</div>
+      <div class="strip-benchmark"><strong>14%</strong>Venture Debt</div>
+      <div class="strip-benchmark"><strong>20%</strong>Mezzanine</div>
+      <div class="strip-benchmark"><strong>50%+</strong></div>
+    </div>
+  </div>
+
+  <div class="flipside">
+    <h3>When does equity make sense?</h3>
+    <div class="flipside-grid">
+      <div class="flipside-item">
+        <h4>No collateral yet.</h4>
+        <p>If the factory isn't built, you can't pledge it. Pre-revenue companies often can't qualify for equipment financing or project debt. Equity fills the gap before assets exist.</p>
+      </div>
+      <div class="flipside-item">
+        <h4>Absorbs downside risk.</h4>
+        <p>If the project fails, there's no loan to repay. Debt on a failed factory is brutal. Equity investors share the loss.</p>
+      </div>
+      <div class="flipside-item">
+        <h4>Not everything is an asset.</h4>
+        <p>R&D, hiring, regulatory approvals, working capital during buildout — these aren't things a lender will underwrite. Equity covers the gaps.</p>
+      </div>
+      <div class="flipside-item">
+        <h4>So what's the point?</h4>
+        <p>Use a capital stack. Some equity, some debt, some equipment financing. Know the effective cost of each piece. Don't use 44% equity to buy a machine you could lease at 10%.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="math-section">
+    <button class="math-toggle" id="mathToggle">
+      How is this calculated?
+      <span class="math-arrow" id="mathArrow">&#9660;</span>
+    </button>
+    <div class="math-content" id="mathContent">
+      <div class="formula-block">
+r = (E / (V + A))^(1/T) − 1
+
+A = Amount raised
+V = Pre-money valuation
+E = Valuation at exit
+T = Years to exit
+V + A = Post-money valuation</div>
+      <p>
+        When you raise $A at a pre-money valuation of $V, investors own A/(V+A) of the company.
+        If the company reaches value $E after T years, the investor's share is worth E&times;A/(V+A).
+        The annualized rate of return on their investment — which is your effective interest rate on that capital —
+        is the rate that satisfies A&times;(1+r)<sup>T</sup> = E&times;A/(V+A).
+        That simplifies to <strong>r&nbsp;=&nbsp;(E/(V+A))^(1/T)&nbsp;−&nbsp;1</strong>.
+        This is the investor's IRR, and it's what you're paying for the money.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  No tracking. No cookies. <a href="view-source:" onclick="event.preventDefault();window.location='view-source:'+window.location.href">View source</a>.
+</footer>
+
+<script>
+// ── Helpers ──
+function fmt(n) {
+  if (n >= 1000) return '$' + (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'B';
+  if (n >= 100) return '$' + Math.round(n) + 'M';
+  if (n >= 10) return '$' + n.toFixed(0) + 'M';
+  return '$' + n.toFixed(1) + 'M';
+}
+
+function calcRate(amount, valuation, exitVal, time) {
+  const postMoney = valuation + amount;
+  const multiple = exitVal / postMoney;
+  if (multiple <= 0) return null;
+  return Math.pow(multiple, 1 / time) - 1;
+}
+
+function rateClass(r) {
+  if (r < 0.12) return 'rate-low';
+  if (r < 0.25) return 'rate-med';
+  if (r < 0.45) return 'rate-high';
+  return 'rate-extreme';
+}
+
+function rateColor(r) {
+  if (r < 0.12) return '#276749';
+  if (r < 0.25) return '#92600a';
+  if (r < 0.45) return '#c2410c';
+  return '#b91c1c';
+}
+
+function rateContext(r) {
+  if (r < 0) return 'The company lost value. Equity was free — investors took the loss.';
+  if (r < 0.07) return 'Cheaper than an SBA loan.';
+  if (r < 0.12) return 'Equipment financing territory.';
+  if (r < 0.18) return 'Venture debt territory.';
+  if (r < 0.30) return 'Mezzanine debt territory. You\'re paying more than most debt instruments.';
+  if (r < 0.50) return 'More expensive than any conventional debt. You could lease a fleet of excavators for less.';
+  if (r < 1.0) return 'You\'re paying more than a hard money lender charges.';
+  return 'This would be illegal if it were a loan.';
+}
+
+function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+
+// ── State ──
+let amount = 12;
+let valuation = 40;
+let exitTime = 7;
+let exitVal = 300;
+
+const round_xRange = [1, 50];
+const round_yRange = [1, 200];
+const exit_xRange  = [1, 15];
+const exit_yRange  = [10, 10000];
+
+// ── URL state ──
+function readURL() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.has('a')) amount = Math.max(round_xRange[0], Math.min(round_xRange[1], parseFloat(p.get('a'))));
+  if (p.has('v')) valuation = Math.max(round_yRange[0], Math.min(round_yRange[1], parseFloat(p.get('v'))));
+  if (p.has('t')) exitTime = Math.max(exit_xRange[0], Math.min(exit_xRange[1], parseFloat(p.get('t'))));
+  if (p.has('e')) exitVal = Math.max(exit_yRange[0], Math.min(exit_yRange[1], parseFloat(p.get('e'))));
+}
+function writeURL() {
+  const p = new URLSearchParams();
+  p.set('a', amount); p.set('v', valuation); p.set('t', exitTime); p.set('e', exitVal);
+  history.replaceState(null, '', '?' + p.toString());
+}
+readURL();
+
+// ── Canvas helpers ──
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, W: rect.width, H: rect.height };
+}
+
+const PAD = { top: 15, right: 15, bottom: 44, left: 55 };
+
+function chartArea(W, H) {
+  return { x: PAD.left, y: PAD.top, w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom };
+}
+
+// logScale: false = linear, true = log10, 'sqrt' = square root
+function valToPixel(val, minV, maxV, pixMin, pixSize, logScale) {
+  if (logScale === 'sqrt') {
+    const t = (Math.sqrt(val) - Math.sqrt(minV)) / (Math.sqrt(maxV) - Math.sqrt(minV));
+    return pixMin + pixSize * t;
+  }
+  if (logScale) {
+    const t = (Math.log10(val) - Math.log10(minV)) / (Math.log10(maxV) - Math.log10(minV));
+    return pixMin + pixSize * t;
+  }
+  return pixMin + pixSize * ((val - minV) / (maxV - minV));
+}
+
+function pixelToVal(px, minV, maxV, pixMin, pixSize, logScale) {
+  const t = Math.max(0, Math.min(1, (px - pixMin) / pixSize));
+  if (logScale === 'sqrt') {
+    const sqrtMin = Math.sqrt(minV), sqrtMax = Math.sqrt(maxV);
+    const v = sqrtMin + (sqrtMax - sqrtMin) * t;
+    return v * v;
+  }
+  if (logScale) {
+    return Math.pow(10, Math.log10(minV) + (Math.log10(maxV) - Math.log10(minV)) * t);
+  }
+  return minV + (maxV - minV) * t;
+}
+
+function generateTicks(min, max, count, log) {
+  const ticks = [];
+  if (log === 'sqrt') {
+    // Pick ticks that are evenly spaced in sqrt-space
+    const sqrtMin = Math.sqrt(min), sqrtMax = Math.sqrt(max);
+    const candidates = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+    const eligible = candidates.filter(v => v >= min && v <= max);
+    // Filter: ensure each tick is at least 12% of the sqrt range apart from the last
+    const result = [];
+    for (const v of eligible) {
+      const pos = (Math.sqrt(v) - sqrtMin) / (sqrtMax - sqrtMin);
+      const lastPos = result.length ? (Math.sqrt(result[result.length - 1]) - sqrtMin) / (sqrtMax - sqrtMin) : -1;
+      if (pos - lastPos > 0.08) result.push(v);
+    }
+    return result;
+  }
+  if (log) {
+    const logMin = Math.floor(Math.log10(min));
+    const logMax = Math.ceil(Math.log10(max));
+    for (let e = logMin; e <= logMax; e++) {
+      for (const m of [1, 2, 5]) {
+        const v = Math.pow(10, e) * m;
+        if (v >= min && v <= max) ticks.push(v);
+      }
+    }
+  } else {
+    const range = max - min;
+    const rough = range / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+    const norm = rough / mag;
+    let nice = norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10;
+    const step = nice * mag;
+    for (let v = Math.ceil(min / step) * step; v <= max; v += step) {
+      ticks.push(Math.round(v * 1000) / 1000);
+    }
+  }
+  return ticks;
+}
+
+function drawGrid(ctx, area, xRange, yRange, xLabel, yLabel, xFmt, yFmt, xLog, yLog) {
+  const xTicks = generateTicks(xRange[0], xRange[1], 6, xLog);
+  const yTicks = generateTicks(yRange[0], yRange[1], 6, yLog);
+
+  ctx.strokeStyle = '#e8e8e3';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+
+  for (const xv of xTicks) {
+    const px = valToPixel(xv, xRange[0], xRange[1], area.x, area.w, xLog);
+    ctx.beginPath(); ctx.moveTo(px, area.y); ctx.lineTo(px, area.y + area.h); ctx.stroke();
+  }
+  for (const yv of yTicks) {
+    const py = area.y + area.h - valToPixel(yv, yRange[0], yRange[1], 0, area.h, yLog);
+    ctx.beginPath(); ctx.moveTo(area.x, py); ctx.lineTo(area.x + area.w, py); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#ccccc5';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(area.x, area.y); ctx.lineTo(area.x, area.y + area.h); ctx.lineTo(area.x + area.w, area.y + area.h);
+  ctx.stroke();
+
+  // Tick labels
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.fillStyle = '#9b9b91';
+  ctx.textAlign = 'center';
+  for (const xv of xTicks) {
+    const px = valToPixel(xv, xRange[0], xRange[1], area.x, area.w, xLog);
+    ctx.fillText(xFmt(xv), px, area.y + area.h + 16);
+  }
+  ctx.textAlign = 'right';
+  for (const yv of yTicks) {
+    const py = area.y + area.h - valToPixel(yv, yRange[0], yRange[1], 0, area.h, yLog);
+    ctx.fillText(yFmt(yv), area.x - 6, py + 3);
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#9b9b91';
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(xLabel, area.x + area.w / 2, area.y + area.h + 34);
+  ctx.save();
+  ctx.translate(13, area.y + area.h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+}
+
+function drawDot(ctx, px, py, color) {
+  ctx.beginPath(); ctx.arc(px, py, 16, 0, Math.PI * 2);
+  ctx.fillStyle = color + '18'; ctx.fill();
+  ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2);
+  ctx.strokeStyle = color + '60'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+}
+
+function drawCrosshair(ctx, px, py, area) {
+  ctx.strokeStyle = 'rgba(44, 82, 130, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(px, area.y); ctx.lineTo(px, area.y + area.h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(area.x, py); ctx.lineTo(area.x + area.w, py); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ── Draw Round Chart ──
+function drawRoundChart() {
+  const canvas = document.getElementById('roundChart');
+  const { ctx, W, H } = setupCanvas(canvas);
+  const area = chartArea(W, H);
+
+  // Heatmap: dilution
+  const res = 50;
+  for (let ix = 0; ix < res; ix++) {
+    for (let iy = 0; iy < res; iy++) {
+      const a = pixelToVal(area.x + area.w * (ix + 0.5) / res, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
+      const v = pixelToVal(area.h * (iy + 0.5) / res, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
+      const dilution = a / (a + v);
+      // Light theme: low dilution = white-ish, high dilution = warm orange tint
+      const r = Math.round(lerp(250, 220, dilution));
+      const g = Math.round(lerp(250, 230, dilution));
+      const b = Math.round(lerp(248, 225, dilution));
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      const cellW = area.w / res;
+      const cellH = area.h / res;
+      ctx.fillRect(area.x + cellW * ix, area.y + area.h - cellH * (iy + 1), cellW + 0.5, cellH + 0.5);
+    }
+  }
+
+  // Iso-dilution contours
+  for (const pct of [0.1, 0.2, 0.3, 0.4, 0.5]) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    let first = true;
+    for (let i = 0; i <= 100; i++) {
+      const a = lerp(round_xRange[0], round_xRange[1], i / 100);
+      const v = a * (1 - pct) / pct;
+      if (v < round_yRange[0] || v > round_yRange[1]) continue;
+      const px = valToPixel(a, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
+      const py = area.y + area.h - valToPixel(v, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
+      if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Label
+    const aL = round_xRange[1] * 0.55;
+    const vL = aL * (1 - pct) / pct;
+    if (vL >= round_yRange[0] && vL <= round_yRange[1]) {
+      const lx = valToPixel(aL, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
+      const ly = area.y + area.h - valToPixel(vL, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(Math.round(pct * 100) + '% dilution', lx, ly - 5);
+    }
+  }
+
+  drawGrid(ctx, area, round_xRange, round_yRange, 'Amount Raised', 'Pre-Money Valuation', v => fmt(v), v => fmt(v), 'sqrt', 'sqrt');
+
+  const px = valToPixel(amount, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
+  const py = area.y + area.h - valToPixel(valuation, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
+  drawCrosshair(ctx, px, py, area);
+  drawDot(ctx, px, py, '#2c5282');
+
+  const dilution = amount / (amount + valuation) * 100;
+  document.getElementById('roundReadout').innerHTML =
+    'Raising <strong>' + fmt(amount) + '</strong> at <strong>' + fmt(valuation) + '</strong> pre-money &rarr; <strong>' + dilution.toFixed(1) + '%</strong> dilution';
+}
+
+// ── Draw Exit Chart ──
+function drawExitChart() {
+  const canvas = document.getElementById('exitChart');
+  const { ctx, W, H } = setupCanvas(canvas);
+  const area = chartArea(W, H);
+
+  // Heatmap: effective rate
+  const res = 50;
+  for (let ix = 0; ix < res; ix++) {
+    for (let iy = 0; iy < res; iy++) {
+      const t = pixelToVal(area.x + area.w * (ix + 0.5) / res, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
+      const e = pixelToVal(area.h * (iy + 0.5) / res, exit_yRange[0], exit_yRange[1], 0, area.h, true);
+      const r = calcRate(amount, valuation, e, t);
+      let red = 250, green = 250, blue = 248;
+      if (r !== null && isFinite(r)) {
+        if (r < 0) { green = lerp(250, 240, Math.min(1, Math.abs(r) * 2)); blue = lerp(248, 245, Math.min(1, Math.abs(r) * 2)); }
+        else if (r < 0.12) { red = lerp(250, 235, r / 0.12); green = lerp(250, 248, r / 0.12); blue = lerp(248, 235, r / 0.12); }
+        else if (r < 0.25) { const p = (r - 0.12) / 0.13; red = lerp(235, 248, p); green = lerp(248, 238, p); blue = lerp(235, 220, p); }
+        else if (r < 0.50) { const p = (r - 0.25) / 0.25; red = lerp(248, 240, p); green = lerp(238, 220, p); blue = lerp(220, 210, p); }
+        else { const p = Math.min(1, (r - 0.50) / 0.50); red = lerp(240, 230, p); green = lerp(220, 205, p); blue = lerp(210, 200, p); }
+      }
+      ctx.fillStyle = `rgb(${Math.round(red)},${Math.round(green)},${Math.round(blue)})`;
+      const cellW = area.w / res;
+      const cellH = area.h / res;
+      ctx.fillRect(area.x + cellW * ix, area.y + area.h - cellH * (iy + 1), cellW + 0.5, cellH + 0.5);
+    }
+  }
+
+  // Iso-rate contours
+  const postMoney = valuation + amount;
+  for (const targetRate of [0.07, 0.10, 0.14, 0.20, 0.40, 0.60, 1.00]) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    let first = true;
+    for (let i = 0; i <= 100; i++) {
+      const t = lerp(exit_xRange[0], exit_xRange[1], i / 100);
+      const e = postMoney * Math.pow(1 + targetRate, t);
+      if (e < exit_yRange[0] || e > exit_yRange[1]) continue;
+      const px = valToPixel(t, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
+      const py = area.y + area.h - valToPixel(e, exit_yRange[0], exit_yRange[1], 0, area.h, true);
+      if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    const tL = lerp(exit_xRange[0], exit_xRange[1], 0.22);
+    const eL = postMoney * Math.pow(1 + targetRate, tL);
+    if (eL >= exit_yRange[0] && eL <= exit_yRange[1]) {
+      const lx = valToPixel(tL, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
+      const ly = area.y + area.h - valToPixel(eL, exit_yRange[0], exit_yRange[1], 0, area.h, true);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(Math.round(targetRate * 100) + '%', lx + 3, ly - 4);
+    }
+  }
+
+  drawGrid(ctx, area, exit_xRange, exit_yRange, 'Time to Exit (years)', 'Exit Valuation', v => v + 'y', v => fmt(v), false, true);
+
+  const px = valToPixel(exitTime, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
+  const py = area.y + area.h - valToPixel(exitVal, exit_yRange[0], exit_yRange[1], 0, area.h, true);
+  drawCrosshair(ctx, px, py, area);
+
+  const r = calcRate(amount, valuation, exitVal, exitTime);
+  const dotColor = (r !== null && isFinite(r)) ? rateColor(r) : '#2c5282';
+  drawDot(ctx, px, py, dotColor);
+
+  const investorReturn = exitVal * (amount / postMoney);
+  const multiple = investorReturn / amount;
+  document.getElementById('exitReadout').innerHTML =
+    'Exit at <strong>' + fmt(exitVal) + '</strong> in <strong>' + exitTime + ' yrs</strong> &rarr; investor gets <strong>' + fmt(Math.round(investorReturn)) + '</strong> (' + multiple.toFixed(1) + 'x)';
+}
+
+// ── Comparison strip ──
+function drawStrip() {
+  const canvas = document.getElementById('stripChart');
+  const { ctx, W, H } = setupCanvas(canvas);
+
+  // Background gradient: green → amber → orange → red
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#f0faf4');
+  grad.addColorStop(0.25, '#fefce8');
+  grad.addColorStop(0.5, '#fff7ed');
+  grad.addColorStop(1, '#fef2f2');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Benchmark ticks
+  const benchmarks = [
+    { rate: 0.07, label: 'SBA' },
+    { rate: 0.10, label: 'Lease' },
+    { rate: 0.14, label: 'V.Debt' },
+    { rate: 0.20, label: 'Mezz' },
+  ];
+
+  // Scale: 0% to 60% (log-ish but simple)
+  const maxRate = 0.60;
+  const toX = (r) => Math.max(0, Math.min(1, r / maxRate)) * W;
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  for (const b of benchmarks) {
+    const x = toX(b.rate);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+
+  // User marker
+  const r = calcRate(amount, valuation, exitVal, exitTime);
+  if (r !== null && isFinite(r) && r > 0) {
+    const x = toX(Math.min(r, maxRate));
+    const color = rateColor(r);
+
+    // Filled bar
+    ctx.fillStyle = color + '20';
+    ctx.fillRect(0, 0, x, H);
+
+    // Line
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+
+    // Label
+    ctx.fillStyle = color;
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = r > maxRate * 0.85 ? 'right' : 'left';
+    const labelX = r > maxRate * 0.85 ? x - 6 : x + 6;
+    ctx.fillText('YOU: ' + (r * 100).toFixed(0) + '%', labelX, H / 2 + 4);
+  }
+}
+
+// ── Master update ──
+function update() {
+  drawRoundChart();
+  drawExitChart();
+  drawStrip();
+  writeURL();
+
+  const r = calcRate(amount, valuation, exitVal, exitTime);
+  const el = document.getElementById('rateValue');
+  const comp = document.getElementById('rateComparison');
+
+  const stickyRateEl = document.getElementById('stickyRate');
+  const stickyCtxEl = document.getElementById('stickyContext');
+
+  if (r === null || !isFinite(r)) {
+    el.textContent = '—';
+    el.className = 'rate-value';
+    comp.textContent = '';
+    stickyRateEl.textContent = '—';
+    stickyRateEl.className = 'sticky-rate';
+    stickyCtxEl.textContent = '';
+  } else {
+    const pctText = (r * 100).toFixed(1) + '%';
+    el.textContent = pctText;
+    el.className = 'rate-value ' + rateClass(r);
+    stickyRateEl.textContent = pctText;
+    stickyRateEl.className = 'sticky-rate ' + rateClass(r);
+    const postMoney = valuation + amount;
+    const investorReturn = exitVal * (amount / postMoney);
+    const detailText = rateContext(r) +
+      ' Investor puts in <strong>' + fmt(amount) + '</strong>, gets back <strong>' +
+      fmt(Math.round(investorReturn)) + '</strong> — a <strong>' +
+      (investorReturn / amount).toFixed(1) + 'x</strong> return.';
+    comp.innerHTML = detailText.replace(' Investor', '<br>Investor');
+    stickyCtxEl.innerHTML = detailText;
+  }
+
+  // Update OG description dynamically (for copy-paste sharing)
+  const desc = document.querySelector('meta[property="og:description"]');
+  if (desc && r !== null && isFinite(r)) {
+    desc.setAttribute('content', 'Raising ' + fmt(amount) + ' at ' + fmt(valuation) + ' pre-money, exit at ' + fmt(exitVal) + ' in ' + exitTime + ' yrs = ' + (r * 100).toFixed(1) + '% effective APR.');
+  }
+}
+
+// ── Drag interaction ──
+function makeDraggable(wrapId, canvasId, xRange, yRange, xLog, yLog, onMove) {
+  const wrap = document.getElementById(wrapId);
+  const canvas = document.getElementById(canvasId);
+  let dragging = false;
+
+  function handlePointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const area = chartArea(rect.width, rect.height);
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const xVal = pixelToVal(mx, xRange[0], xRange[1], area.x, area.w, xLog);
+    const yVal = pixelToVal(area.h - (my - area.y), yRange[0], yRange[1], 0, area.h, yLog);
+    onMove(
+      Math.max(xRange[0], Math.min(xRange[1], xVal)),
+      Math.max(yRange[0], Math.min(yRange[1], yVal))
+    );
+    update();
+  }
+
+  wrap.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    wrap.setPointerCapture(e.pointerId);
+    handlePointer(e);
+  });
+  wrap.addEventListener('pointermove', (e) => { if (dragging) handlePointer(e); });
+  wrap.addEventListener('pointerup', () => { dragging = false; });
+  wrap.addEventListener('pointercancel', () => { dragging = false; });
+}
+
+function snapAmount(v) { return Math.round(v * 2) / 2; }
+function snapVal(v) { return Math.round(v); }
+function snapTime(v) { return Math.round(v); }
+function snapExit(v) {
+  if (v < 50) return Math.round(v);
+  if (v < 200) return Math.round(v / 5) * 5;
+  if (v < 1000) return Math.round(v / 10) * 10;
+  return Math.round(v / 50) * 50;
+}
+
+makeDraggable('roundWrap', 'roundChart', round_xRange, round_yRange, 'sqrt', 'sqrt',
+  (x, y) => { amount = snapAmount(x); valuation = snapVal(y); });
+makeDraggable('exitWrap', 'exitChart', exit_xRange, exit_yRange, false, true,
+  (x, y) => { exitTime = snapTime(x); exitVal = snapExit(y); });
+
+// Math toggle
+document.getElementById('mathToggle').addEventListener('click', () => {
+  document.getElementById('mathContent').classList.toggle('open');
+  document.getElementById('mathArrow').classList.toggle('open');
+});
+
+// Sticky bar: show compact fixed bar when full display scrolls out of view
+const rateDisplayEl = document.getElementById('rateDisplay');
+const stickyBar = document.getElementById('stickyBar');
+let stickyVisible = false;
+function checkSticky() {
+  const show = rateDisplayEl.getBoundingClientRect().top < -20;
+  if (show !== stickyVisible) {
+    stickyVisible = show;
+    stickyBar.classList.toggle('visible', show);
+  }
+}
+window.addEventListener('scroll', checkSticky, { passive: true });
+
+window.addEventListener('resize', update);
+update();
+</script>
+</body>
+</html>
