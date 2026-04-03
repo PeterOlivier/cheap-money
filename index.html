@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cheap Money? — The Real Cost of Equity</title>
-<meta name="description" content="Equity has no monthly payments. It's still not free. See the effective interest rate of your equity raise.">
-<meta property="og:title" content="Is Equity Cheap Money?">
-<meta property="og:description" content="Equity has no monthly payments. It's still not free. See the effective APR of your raise.">
+<title>Capital Stack Explorer — How Much of Your Company Are You Selling?</title>
+<meta name="description" content="See how layering non-dilutive capital into your fundraising journey preserves founder ownership at exit.">
+<meta property="og:title" content="Capital Stack Explorer">
+<meta property="og:description" content="Model your equity journey. See what you keep at exit.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Is Equity Cheap Money?">
-<meta name="twitter:description" content="Equity has no monthly payments. It's still not free. See the effective APR of your raise.">
+<meta name="twitter:title" content="Capital Stack Explorer">
+<meta name="twitter:description" content="Model your equity journey. See what you keep at exit.">
 <style>
   :root {
     --bg: #fafaf8;
@@ -24,12 +24,19 @@
     --accent-light: #ebf2fa;
     --green: #276749;
     --green-bg: #f0faf4;
+    --green-light: #c6f6d5;
     --amber: #92600a;
     --amber-bg: #fefce8;
     --orange: #c2410c;
     --orange-bg: #fff7ed;
     --red: #b91c1c;
     --red-bg: #fef2f2;
+    --debt-color: #6366f1;
+    --debt-light: #eef2ff;
+    --equity-color: #e11d48;
+    --equity-light: #fff1f2;
+    --founder-color: #059669;
+    --founder-light: #ecfdf5;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,8 +46,6 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    -webkit-user-select: none;
-    user-select: none;
     line-height: 1.5;
   }
 
@@ -66,461 +71,536 @@
   .subtitle {
     color: var(--text-secondary);
     font-size: 1.05rem;
-    max-width: 580px;
+    max-width: 620px;
     margin: 0 auto;
     line-height: 1.6;
   }
 
-  /* Rate display — full size, in flow */
-  .rate-display {
-    text-align: center;
-    padding: 2rem 2rem 1.75rem;
-    margin-bottom: 2rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-  }
-  .rate-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    margin-bottom: 0.25rem;
-  }
-  .rate-value {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 4.2rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    transition: color 0.3s;
-    line-height: 1.1;
-  }
-  .rate-comparison {
-    margin-top: 0.5rem;
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-  }
-  .rate-comparison strong {
-    color: var(--text);
-    font-weight: 600;
-  }
-
-  /* Compact sticky bar — separate fixed element */
-  .sticky-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 200;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-    padding: 0.55rem 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    transform: translateY(-100%);
-    transition: transform 0.25s ease;
-    pointer-events: none;
-  }
-  .sticky-bar.visible {
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  .sticky-bar .sticky-rate {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    white-space: nowrap;
-  }
-  .sticky-bar .sticky-context {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.3;
-    text-align: left;
-  }
-  .sticky-bar .sticky-context strong {
-    color: var(--text);
-    font-weight: 600;
-  }
-
-  .rate-low { color: var(--green); }
-  .rate-med { color: var(--amber); }
-  .rate-high { color: var(--orange); }
-  .rate-extreme { color: var(--red); }
-
-  /* Comparison strip */
-  .strip-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 2rem;
-  }
-  .strip-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
-  }
-  .strip {
-    position: relative;
-    height: 36px;
-    background: var(--border-light);
-    border-radius: 6px;
-    overflow: visible;
-  }
-  .strip-benchmarks {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-  }
-  .strip-benchmark {
-    text-align: center;
-    flex: 1;
-    cursor: default;
-    position: relative;
-  }
-  .strip-benchmark strong {
-    display: block;
-    font-weight: 600;
-    color: var(--text-secondary);
-    font-family: 'SF Mono', 'Consolas', monospace;
-    font-size: 0.72rem;
-  }
-  .strip-benchmark .tip {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--text);
-    color: #fff;
-    font-size: 0.68rem;
-    line-height: 1.4;
-    padding: 0.4rem 0.6rem;
-    border-radius: 5px;
-    width: 190px;
-    text-align: left;
-    pointer-events: none;
-    z-index: 10;
-    margin-bottom: 4px;
-  }
-  .strip-benchmark:hover .tip { display: block; }
-  .strip canvas {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 6px;
-  }
-
-  /* Panels */
-  .panels {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    margin-bottom: 2rem;
-  }
-  @media (max-width: 768px) {
-    .panels { grid-template-columns: 1fr; }
-    .rate-value { font-size: 3rem; }
-    h1 { font-size: 1.6rem; }
-  }
-
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem;
-  }
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-  }
-  .panel-title {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-  }
-  .panel-readout {
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.75rem;
-    line-height: 1.5;
-    min-height: 2.65rem;
-  }
-  .panel-readout strong {
-    color: var(--text);
-    font-weight: 600;
-  }
-
-  /* Inline editable inputs */
-  .inline-input {
-    font: inherit;
-    font-weight: 600;
-    color: var(--text);
-    background: transparent;
-    border: none;
-    border-bottom: 1.5px dashed var(--border);
-    padding: 0 1px;
-    text-align: center;
-    outline: none;
-    -webkit-user-select: text;
-    user-select: text;
-    cursor: text;
-  }
-  .inline-input:focus {
-    border-bottom-style: solid;
-    border-bottom-color: var(--accent);
-  }
-  .inline-input:hover:not(:focus) {
-    border-bottom-color: var(--text-muted);
-  }
-
-  /* Range toggle */
-  .range-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    cursor: pointer;
-    user-select: none;
-  }
-  .range-toggle .toggle-pill {
-    width: 32px;
-    height: 16px;
-    border-radius: 8px;
-    background: var(--border);
-    position: relative;
-    transition: background 0.2s;
-  }
-  .range-toggle .toggle-pill::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #fff;
-    transition: transform 0.2s;
-  }
-  .range-toggle.active .toggle-pill {
-    background: var(--accent);
-  }
-  .range-toggle.active .toggle-pill::after {
-    transform: translateX(16px);
-  }
-
-  .chart-wrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1;
-    cursor: crosshair;
-  }
-  .chart-wrap canvas {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100% !important;
-    height: 100% !important;
-  }
-  .hint {
-    text-align: center;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin-bottom: 1.75rem;
-  }
-
-  /* Scenarios */
-  .scenarios-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 2rem;
-  }
-  .scenarios-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-  }
-  .scenarios-header .strip-label { margin-bottom: 0; }
-  .save-btn {
-    font-family: inherit;
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    background: var(--accent-light);
-    border: 1px solid var(--accent);
-    border-radius: 5px;
-    padding: 0.3rem 0.7rem;
-    cursor: pointer;
-  }
-  .save-btn:hover { background: #dce8f5; }
-  .save-btn:disabled { opacity: 0.4; cursor: default; }
-  .scenario-empty {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    padding: 0.25rem 0;
-  }
-  .scenario-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-    border-top: 1px solid var(--border-light);
-    font-size: 0.82rem;
-  }
-  .scenario-row:first-child { border-top: none; }
-  .scenario-name {
-    font-weight: 600;
-    color: var(--text);
-    min-width: 0;
-    cursor: text;
-    border: none;
-    border-bottom: 1px dashed transparent;
-    background: transparent;
-    font: inherit;
-    font-weight: 600;
-    font-size: 0.82rem;
-    padding: 0;
-    outline: none;
-    width: 120px;
-  }
-  .scenario-name:hover { border-bottom-color: var(--border); }
-  .scenario-name:focus { border-bottom-color: var(--accent); border-bottom-style: solid; }
-  .scenario-summary {
-    flex: 1;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .scenario-rate {
-    font-family: 'SF Mono', 'Consolas', monospace;
-    font-weight: 600;
-    font-size: 0.78rem;
-    white-space: nowrap;
-  }
-  .scenario-btn {
-    font-family: inherit;
-    font-size: 0.68rem;
-    font-weight: 600;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0.2rem 0.45rem;
-    cursor: pointer;
-    background: transparent;
-    color: var(--text-secondary);
-  }
-  .scenario-btn:hover { background: var(--border-light); color: var(--text); }
-  .scenario-btn.del { color: var(--red); border-color: transparent; }
-  .scenario-btn.del:hover { background: var(--red-bg); }
-
-  /* Flip side */
-  .flipside {
+  /* Section styling */
+  .section {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
   }
-  .flipside h3 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: var(--text);
-  }
-  .flipside-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-  @media (max-width: 768px) {
-    .flipside-grid { grid-template-columns: 1fr; }
-  }
-  .flipside-item h4 {
-    font-size: 0.82rem;
+  .section-label {
+    font-size: 0.72rem;
     font-weight: 600;
-    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
     margin-bottom: 0.25rem;
   }
-  .flipside-item p {
-    font-size: 0.82rem;
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .section-desc {
+    font-size: 0.88rem;
     color: var(--text-secondary);
+    margin-bottom: 1.25rem;
     line-height: 1.6;
   }
 
-  /* Math section */
-  .math-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 1.25rem;
-    overflow: hidden;
-  }
-  .math-toggle {
+  /* Sector selector */
+  .sector-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .sector-bar label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .sector-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sector-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sector-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* Rounds table */
+  .rounds-table {
     width: 100%;
-    padding: 1rem 1.5rem;
-    background: none;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+  }
+  .rounds-table th {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 0.5rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .rounds-table th:not(:first-child) { text-align: right; }
+  .rounds-table td {
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+  }
+  .rounds-table td:not(:first-child) { text-align: right; }
+  .rounds-table tr:last-child td { border-bottom: none; }
+  .round-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .round-input {
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px dashed var(--border);
+    padding: 0.15rem 0.25rem;
+    text-align: right;
+    width: 70px;
+    outline: none;
+  }
+  .round-input:focus {
+    border-bottom-style: solid;
+    border-bottom-color: var(--accent);
+  }
+  .round-input:hover:not(:focus) {
+    border-bottom-color: var(--text-muted);
+  }
+  .computed-cell {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .ownership-cell { color: var(--founder-color); }
+  .dilution-cell { color: var(--equity-color); }
+  .add-round-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+  .add-round-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+  .remove-round-btn {
+    font-family: inherit;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    background: transparent;
     border: none;
     cursor: pointer;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    line-height: 1;
+  }
+  .remove-round-btn:hover { color: var(--red); background: var(--red-bg); }
+
+  /* Ownership mini chart (Step 1) */
+  .ownership-preview {
+    margin-top: 1rem;
+    position: relative;
+    height: 60px;
+  }
+  .ownership-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+  .ownership-bar-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    width: 60px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .ownership-bar-track {
+    flex: 1;
+    height: 22px;
+    background: var(--border-light);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .ownership-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+  }
+  .ownership-bar-fill span {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  /* Step 2: Debt sliders */
+  .debt-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .debt-round {
+    display: grid;
+    grid-template-columns: 90px 1fr 140px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .debt-round:last-child { border-bottom: none; }
+  .debt-round-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .debt-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .debt-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .debt-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .debt-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .debt-pct {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--debt-color);
+    min-width: 36px;
+    text-align: right;
+  }
+  .debt-type-select {
+    font-family: inherit;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    outline: none;
+  }
+  .debt-type-select:focus { border-color: var(--accent); }
+
+  .debt-split-summary {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    margin-top: 0.15rem;
+  }
+  .debt-split-summary .equity-part { color: var(--equity-color); font-weight: 600; }
+  .debt-split-summary .debt-part { color: var(--debt-color); font-weight: 600; }
+
+  /* Step 3: Exit */
+  .exit-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .exit-slider-group {
+    flex: 1;
+    min-width: 250px;
+  }
+  .exit-slider-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+  }
+  .exit-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .exit-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .exit-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .exit-val-display {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    min-width: 100px;
+  }
+
+  /* Delta callout */
+  .delta-callout {
+    background: var(--founder-light);
+    border: 1px solid var(--green-light);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .delta-headline {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--founder-color);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+  .delta-sub {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .delta-sub strong { color: var(--text); }
+
+  /* Side by side comparison cards */
+  .compare-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  @media (max-width: 600px) {
+    .compare-cards { grid-template-columns: 1fr; }
+  }
+  .compare-card {
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .compare-card.equity-only {
+    background: var(--equity-light);
+    border: 1px solid #fecdd3;
+  }
+  .compare-card.blended {
+    background: var(--founder-light);
+    border: 1px solid var(--green-light);
+  }
+  .compare-card-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+  .compare-card-pct {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.15rem;
+  }
+  .compare-card.equity-only .compare-card-pct { color: var(--equity-color); }
+  .compare-card.blended .compare-card-pct { color: var(--founder-color); }
+  .compare-card-dollars {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+
+  /* Charts */
+  .chart-container {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    margin-bottom: 0.5rem;
+  }
+  .chart-container canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  @media (max-width: 768px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 1.6rem; }
+    .delta-headline { font-size: 2rem; }
+    .debt-round { grid-template-columns: 70px 1fr 120px; }
+  }
+
+  /* Sankey chart */
+  .sankey-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    margin-bottom: 0.5rem;
+  }
+  .sankey-container canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .sankey-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .sankey-toggle-pills {
+    display: flex;
+    background: var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .sankey-pill {
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sankey-pill.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .sankey-pill:hover:not(.active) {
+    color: var(--text);
+  }
+
+  /* CTA */
+  .cta-section {
+    background: var(--accent);
+    border-radius: 10px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    margin-bottom: 1.25rem;
+  }
+  .cta-section h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .cta-section p {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 1.25rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta-btn {
     font-family: inherit;
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--text);
-    text-align: left;
-  }
-  .math-toggle:hover { background: var(--border-light); }
-  .math-arrow {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    transition: transform 0.2s;
-  }
-  .math-content {
-    display: none;
-    padding: 0 1.5rem 1.5rem;
-  }
-  .math-content.open { display: block; }
-  .math-arrow.open { transform: rotate(180deg); }
-  .formula-block {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 0.88rem;
     color: var(--accent);
-    background: var(--accent-light);
-    padding: 1rem 1.25rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    line-height: 1.8;
+    background: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
   }
-  .math-content p {
-    font-size: 0.82rem;
+  .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+  /* Framing callout */
+  .framing {
+    background: var(--accent-light);
+    border: 1px solid #c3d9f0;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .framing p {
+    font-size: 0.88rem;
     color: var(--text-secondary);
     line-height: 1.7;
   }
+  .framing strong { color: var(--text); }
 
   /* Footer */
   footer {
@@ -535,142 +615,148 @@
     border-bottom: 1px solid var(--border);
   }
   footer a:hover { color: var(--text); }
+
+  /* Responsive table */
+  @media (max-width: 600px) {
+    .rounds-table { font-size: 0.78rem; }
+    .round-input { width: 55px; font-size: 0.78rem; }
+    .rounds-table th, .rounds-table td { padding: 0.4rem 0.3rem; }
+  }
 </style>
 </head>
 <body>
 <div class="container">
 
   <header>
-    <h1>Steel costs $800/ton.<br>What does a dollar of equity cost?</h1>
+    <h1>How much of your company<br>are you selling?</h1>
     <p class="subtitle">
-      You price every input — materials, labor, equipment, facilities.
-      But the most expensive input might be the capital itself.
+      You're going to raise debt eventually. The question is when you start —
+      and how much equity you save by starting sooner.
     </p>
   </header>
 
-  <div class="rate-display" id="rateDisplay">
-    <div class="rate-label">Effective Annual Interest Rate of Your Equity</div>
-    <div class="rate-value" id="rateValue">—</div>
-    <div class="rate-comparison" id="rateComparison"></div>
+  <div class="sector-bar">
+    <label>Sector defaults:</label>
+    <button class="sector-btn active" data-sector="dac">DAC</button>
+    <button class="sector-btn" data-sector="robotics">Robotics</button>
+    <button class="sector-btn" data-sector="solar">Solar Hardware</button>
+    <button class="sector-btn" data-sector="general">General Climate</button>
   </div>
 
-  <div class="sticky-bar" id="stickyBar">
-    <span class="sticky-rate" id="stickyRate">—</span>
-    <span class="sticky-context" id="stickyContext"></span>
+  <!-- Step 1 -->
+  <div class="section">
+    <div class="section-label">Step 1</div>
+    <div class="section-title">Define Your Equity Journey</div>
+    <div class="section-desc">The average dilution path for a company like yours. Edit any number to match your plan.</div>
+    <table class="rounds-table" id="roundsTable">
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>Raised</th>
+          <th>Pre-Money</th>
+          <th>Dilution</th>
+          <th>Ownership</th>
+          <th>Years</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="roundsBody"></tbody>
+    </table>
+    <button class="add-round-btn" id="addRoundBtn">+ Add Round</button>
+
+    <div class="ownership-preview" id="ownershipPreview"></div>
   </div>
 
-  <p class="hint">Set your raise, then your exit. Drag the dot or click the numbers to edit.</p>
+  <!-- Step 2 -->
+  <div class="section">
+    <div class="section-label">Step 2</div>
+    <div class="section-title">Layer In Debt</div>
+    <div class="section-desc">Replace a portion of each round's capital need with non-dilutive financing. Watch your ownership change.</div>
+    <div class="debt-grid" id="debtGrid"></div>
+  </div>
 
-  <div class="panels">
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">Step 1 — The Round</div>
+  <!-- Step 3 -->
+  <div class="section">
+    <div class="section-label">Step 3</div>
+    <div class="section-title">Model an Exit</div>
+    <div class="section-desc">Pick an exit valuation. See what you keep.</div>
+    <div class="exit-controls">
+      <div class="exit-slider-group">
+        <label>Exit Valuation</label>
+        <input type="range" class="exit-slider" id="exitSlider" min="50" max="3000" value="500" step="10">
       </div>
-      <div class="panel-readout" id="roundReadout"></div>
-      <div class="chart-wrap" id="roundWrap">
-        <canvas id="roundChart"></canvas>
-      </div>
+      <div class="exit-val-display" id="exitValDisplay">$500M</div>
     </div>
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">Step 2 — The Exit</div>
-        <div class="range-toggle" id="rangeToggle" title="Toggle between a single exit value and a low/high range">
-          <span>Range</span>
-          <div class="toggle-pill"></div>
+  </div>
+
+  <!-- Delta callout -->
+  <div class="delta-callout" id="deltaCallout">
+    <div class="delta-headline" id="deltaHeadline">+0.0%</div>
+    <div class="delta-sub" id="deltaSub"></div>
+  </div>
+
+  <!-- Comparison cards -->
+  <div class="compare-cards">
+    <div class="compare-card equity-only">
+      <div class="compare-card-label">Equity Only — Founder Keeps</div>
+      <div class="compare-card-pct" id="eqOnlyPct">—</div>
+      <div class="compare-card-dollars" id="eqOnlyDollars"></div>
+    </div>
+    <div class="compare-card blended">
+      <div class="compare-card-label">With Debt — Founder Keeps</div>
+      <div class="compare-card-pct" id="blendedPct">—</div>
+      <div class="compare-card-dollars" id="blendedDollars"></div>
+    </div>
+  </div>
+
+  <!-- Sankey -->
+  <div class="section">
+    <div class="panel-header" style="margin-bottom:0.75rem">
+      <div class="section-label" style="margin-bottom:0">Where Ownership Goes</div>
+      <div class="sankey-toggle">
+        <div class="sankey-toggle-pills">
+          <button class="sankey-pill active" data-view="equity">Equity Only</button>
+          <button class="sankey-pill" data-view="blended">With Debt</button>
         </div>
       </div>
-      <div class="panel-readout" id="exitReadout"></div>
-      <div class="chart-wrap" id="exitWrap">
-        <canvas id="exitChart"></canvas>
+    </div>
+    <div class="sankey-container">
+      <canvas id="sankeyChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="section">
+      <div class="section-label">Ownership Over Time</div>
+      <div class="chart-container">
+        <canvas id="ownershipChart"></canvas>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">Exit Waterfall</div>
+      <div class="chart-container">
+        <canvas id="waterfallChart"></canvas>
       </div>
     </div>
   </div>
 
-  <div class="strip-container">
-    <div class="strip-label">Your equity cost vs. other ways to finance the same thing</div>
-    <div class="strip">
-      <canvas id="stripChart"></canvas>
-    </div>
-    <div class="strip-benchmarks">
-      <div class="strip-benchmark">
-        <strong>3%</strong>DOE / Green Bank
-        <span class="tip">DOE Loan Programs Office and state green banks. 2–5% for energy, manufacturing, and infrastructure projects.</span>
-      </div>
-      <div class="strip-benchmark">
-        <strong>7%</strong>SBA Loan
-        <span class="tip">SBA 7(a) and 504 loans. 6–10% for small businesses with collateral.</span>
-      </div>
-      <div class="strip-benchmark">
-        <strong>10%</strong>Equip. Lease
-        <span class="tip">Equipment financing and leasing. 8–12% for asset-backed purchases.</span>
-      </div>
-      <div class="strip-benchmark">
-        <strong>14%</strong>Venture Debt
-        <span class="tip">Venture debt from specialty lenders. 12–16%, typically requires a prior equity round.</span>
-      </div>
-      <div class="strip-benchmark">
-        <strong>20%</strong>Mezzanine
-        <span class="tip">Mezzanine debt. 18–22%, subordinated to senior debt, often with warrants.</span>
-      </div>
-      <div class="strip-benchmark"><strong>50%+</strong></div>
-    </div>
+  <!-- Framing -->
+  <div class="framing">
+    <p>
+      <strong>Your equity story and your debt story run side by side.</strong>
+      Equipment financing can start as early as your first asset purchase — even a $500K lease.
+      Revenue-based or venture debt unlocks at mid-stage. Structured project finance comes later,
+      at the lowest cost and most tailored terms. The earlier you start the debt track, the more
+      of your company you keep.
+    </p>
   </div>
 
-  <div class="scenarios-container" id="scenariosContainer">
-    <div class="scenarios-header">
-      <div class="strip-label">Saved Scenarios</div>
-      <button class="save-btn" id="saveBtn">+ Save</button>
-    </div>
-    <div id="scenariosList">
-      <div class="scenario-empty" id="scenarioEmpty">Save your current scenario to compare it against other offers.</div>
-    </div>
-  </div>
-
-  <div class="flipside">
-    <h3>When does equity make sense?</h3>
-    <div class="flipside-grid">
-      <div class="flipside-item">
-        <h4>No collateral yet.</h4>
-        <p>If the facility isn't built, you can't pledge it. Pre-revenue companies often can't qualify for equipment financing or project debt. Equity fills the gap before assets exist.</p>
-      </div>
-      <div class="flipside-item">
-        <h4>Absorbs downside risk.</h4>
-        <p>If the project fails, there's no loan to repay. Debt on a failed project is brutal. Equity investors share the loss.</p>
-      </div>
-      <div class="flipside-item">
-        <h4>Not everything is an asset.</h4>
-        <p>R&D, hiring, regulatory approvals, working capital during buildout — these aren't things a lender will underwrite. Equity covers the gaps.</p>
-      </div>
-      <div class="flipside-item">
-        <h4>So what's the point?</h4>
-        <p>Know the effective cost of each piece. Don't use 44% equity to buy a machine you could lease at 10%.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="math-section">
-    <button class="math-toggle" id="mathToggle">
-      How is this calculated?
-      <span class="math-arrow" id="mathArrow">&#9660;</span>
-    </button>
-    <div class="math-content" id="mathContent">
-      <div class="formula-block">
-r = (E / (V + A))^(1/T) − 1
-
-A = Amount raised
-V = Pre-money valuation
-E = Valuation at exit
-T = Years to exit
-V + A = Post-money valuation</div>
-      <p>
-        When you raise $A at a pre-money valuation of $V, investors own A/(V+A) of the company.
-        If the company reaches value $E after T years, the investor's share is worth E&times;A/(V+A).
-        The annualized rate of return on their investment — which is your effective interest rate on that capital —
-        is the rate that satisfies A&times;(1+r)<sup>T</sup> = E&times;A/(V+A).
-        That simplifies to <strong>r&nbsp;=&nbsp;(E/(V+A))^(1/T)&nbsp;−&nbsp;1</strong>.
-        This is the investor's IRR, and it's what you're paying for the money.
-      </p>
-    </div>
+  <!-- CTA -->
+  <div class="cta-section">
+    <h3>Want to model this with real numbers?</h3>
+    <p>We help climate hardware founders build their capital stack — equity and debt, working together.</p>
+    <button class="cta-btn">Talk to Us</button>
   </div>
 
 </div>
@@ -680,6 +766,59 @@ V + A = Post-money valuation</div>
 </footer>
 
 <script>
+// ── Sector Defaults ──
+const SECTORS = {
+  dac: {
+    label: 'DAC',
+    rounds: [
+      { name: 'Seed', amount: 3, preMoney: 10, gap: 1.5 },
+      { name: 'Series A', amount: 15, preMoney: 50, gap: 2 },
+      { name: 'Series B', amount: 40, preMoney: 180, gap: 2 },
+      { name: 'Series C', amount: 100, preMoney: 500, gap: 2 },
+    ],
+  },
+  robotics: {
+    label: 'Robotics',
+    rounds: [
+      { name: 'Seed', amount: 2.5, preMoney: 12, gap: 1.5 },
+      { name: 'Series A', amount: 12, preMoney: 45, gap: 2 },
+      { name: 'Series B', amount: 35, preMoney: 160, gap: 2 },
+      { name: 'Series C', amount: 80, preMoney: 400, gap: 2 },
+    ],
+  },
+  solar: {
+    label: 'Solar Hardware',
+    rounds: [
+      { name: 'Seed', amount: 2, preMoney: 8, gap: 1.5 },
+      { name: 'Series A', amount: 10, preMoney: 40, gap: 2 },
+      { name: 'Series B', amount: 30, preMoney: 150, gap: 2 },
+      { name: 'Series C', amount: 80, preMoney: 400, gap: 2 },
+    ],
+  },
+  general: {
+    label: 'General Climate',
+    rounds: [
+      { name: 'Seed', amount: 2, preMoney: 8, gap: 1.5 },
+      { name: 'Series A', amount: 10, preMoney: 40, gap: 2 },
+      { name: 'Series B', amount: 30, preMoney: 150, gap: 2 },
+      { name: 'Series C', amount: 80, preMoney: 400, gap: 2 },
+    ],
+  },
+};
+
+const DEBT_TYPES = [
+  { value: 'equipment', label: 'Equipment Financing', desc: 'Available early, asset-backed' },
+  { value: 'venture', label: 'Venture Debt', desc: 'Mid-stage, requires equity round' },
+  { value: 'project', label: 'Project Finance', desc: 'Later-stage, lowest cost' },
+];
+
+// ── State ──
+let sector = 'dac';
+let rounds = JSON.parse(JSON.stringify(SECTORS.dac.rounds));
+let debtMix = [0, 0, 0, 0];
+let debtTypes = ['equipment', 'equipment', 'venture', 'project'];
+let exitValue = 500;
+
 // ── Helpers ──
 function fmt(n) {
   if (n >= 1000) return '$' + (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'B';
@@ -688,95 +827,217 @@ function fmt(n) {
   if (n >= 1) return '$' + n.toFixed(1) + 'M';
   return '$' + Math.round(n * 1000) + 'K';
 }
-function fmtPlain(n) {
-  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1);
-  if (n >= 100) return Math.round(n).toString();
-  if (n >= 10) return n.toFixed(0);
-  if (n >= 1) return n.toFixed(1);
-  return Math.round(n * 1000).toString();
-}
-function fmtSuffix(n) {
-  if (n >= 1000) return 'B';
-  if (n < 1) return 'K';
-  return 'M';
+
+function fmtDollars(n) {
+  if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'B';
+  if (n >= 1) return '$' + n.toFixed(1) + 'M';
+  return '$' + Math.round(n * 1000) + 'K';
 }
 
-function calcRate(a, v, e, t) {
-  const postMoney = v + a;
-  const multiple = e / postMoney;
-  if (multiple <= 0) return null;
-  return Math.pow(multiple, 1 / t) - 1;
-}
+// ── Dilution Engine ──
+function computePath(useDebt) {
+  let ownership = 1.0;
+  const path = [{ label: 'Founding', ownership: 1.0, time: 0 }];
+  let cumTime = 0;
+  let totalDebtRaised = 0;
 
-function rateClass(r) {
-  if (r < 0.12) return 'rate-low';
-  if (r < 0.25) return 'rate-med';
-  if (r < 0.45) return 'rate-high';
-  return 'rate-extreme';
-}
+  for (let i = 0; i < rounds.length; i++) {
+    const r = rounds[i];
+    cumTime += r.gap;
+    const debtFrac = useDebt ? debtMix[i] : 0;
+    const equityRaised = r.amount * (1 - debtFrac);
+    const debtRaised = r.amount * debtFrac;
+    totalDebtRaised += debtRaised;
 
-function rateColor(r) {
-  if (r < 0.12) return '#276749';
-  if (r < 0.25) return '#92600a';
-  if (r < 0.45) return '#c2410c';
-  return '#b91c1c';
-}
+    const dilution = equityRaised / (r.preMoney + equityRaised);
+    ownership = ownership * (1 - dilution);
 
-function rateContext(r) {
-  if (r < 0) return 'The company lost value. Equity was free — investors took the loss.';
-  if (r < 0.03) return 'Cheaper than a DOE loan.';
-  if (r < 0.07) return 'Cheaper than an SBA loan.';
-  if (r < 0.12) return 'Equipment financing territory.';
-  if (r < 0.18) return 'Venture debt territory.';
-  if (r < 0.30) return 'Mezzanine debt territory. You\'re paying more than most debt instruments.';
-  if (r < 0.50) return 'More expensive than any conventional debt. You could lease a fleet of equipment for less.';
-  if (r < 1.0) return 'You\'re paying more than a hard money lender charges.';
-  return 'This would be illegal if it were a loan.';
-}
-
-function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
-
-// ── State ──
-let amount = 12;
-let valuation = 40;
-let exitTime = 7;
-let exitVal = 300;
-let rangeMode = false;
-let exitValLow = 150;
-let exitValHigh = 600;
-
-const round_xRange = [0.25, 50];
-const round_yRange = [1, 200];
-const exit_xRange  = [1, 15];
-const exit_yRange  = [10, 3000];
-
-// ── URL state ──
-function readURL() {
-  const p = new URLSearchParams(window.location.search);
-  if (p.has('a')) amount = Math.max(round_xRange[0], Math.min(round_xRange[1], parseFloat(p.get('a'))));
-  if (p.has('v')) valuation = Math.max(round_yRange[0], Math.min(round_yRange[1], parseFloat(p.get('v'))));
-  if (p.has('t')) exitTime = Math.max(exit_xRange[0], Math.min(exit_xRange[1], parseFloat(p.get('t'))));
-  if (p.has('e')) exitVal = Math.max(exit_yRange[0], Math.min(exit_yRange[1], parseFloat(p.get('e'))));
-  if (p.has('el') && p.has('eh')) {
-    rangeMode = true;
-    exitValLow = Math.max(exit_yRange[0], Math.min(exit_yRange[1], parseFloat(p.get('el'))));
-    exitValHigh = Math.max(exit_yRange[0], Math.min(exit_yRange[1], parseFloat(p.get('eh'))));
-    document.getElementById('rangeToggle').classList.add('active');
+    path.push({
+      label: r.name,
+      ownership,
+      time: cumTime,
+      equityRaised,
+      debtRaised,
+      dilution,
+      preMoney: r.preMoney,
+    });
   }
-}
-function writeURL() {
-  const p = new URLSearchParams();
-  p.set('a', amount); p.set('v', valuation); p.set('t', exitTime);
-  if (rangeMode) {
-    p.set('el', exitValLow); p.set('eh', exitValHigh);
-  } else {
-    p.set('e', exitVal);
-  }
-  history.replaceState(null, '', '?' + p.toString());
-}
-readURL();
 
-// ── Canvas helpers ──
+  return { path, totalDebtRaised };
+}
+
+function computeWaterfall(path, exit, useDebt) {
+  // Simple model: debt gets repaid at 1.15x (simplified cost), rest goes to equity holders
+  const items = [];
+  let remaining = exit;
+  let totalDebtRepayment = 0;
+
+  // Debt repayment first (senior)
+  if (useDebt) {
+    for (let i = 1; i < path.length; i++) {
+      const dr = path[i].debtRaised || 0;
+      if (dr > 0) {
+        const repayment = dr * 1.15; // simplified 15% total cost of debt
+        totalDebtRepayment += repayment;
+      }
+    }
+    totalDebtRepayment = Math.min(totalDebtRepayment, remaining);
+    remaining -= totalDebtRepayment;
+    if (totalDebtRepayment > 0) {
+      items.push({ label: 'Debt Repayment', value: totalDebtRepayment, color: '#6366f1' });
+    }
+  }
+
+  // Equity investors get their proportional share of what's left
+  // Each round's investors own: dilution * (ownership before that round)
+  // We track cumulative investor ownership
+  let founderOwnership = 1.0;
+  const investorShares = [];
+  for (let i = 1; i < path.length; i++) {
+    const shareOfCompany = path[i].dilution * founderOwnership;
+    founderOwnership *= (1 - path[i].dilution);
+    investorShares.push({ label: path[i].label, share: shareOfCompany });
+  }
+
+  // Actually, founder ownership at end IS the path's final ownership
+  const finalFounderOwnership = path[path.length - 1].ownership;
+  const totalInvestorOwnership = 1 - finalFounderOwnership;
+
+  // Distribute remaining to investors proportionally
+  const colors = ['#e11d48', '#f43f5e', '#fb7185', '#fda4af'];
+  for (let i = 0; i < investorShares.length; i++) {
+    const inv = investorShares[i];
+    const payout = remaining * (inv.share / (totalInvestorOwnership + finalFounderOwnership));
+    items.push({ label: inv.label + ' Investors', value: payout, color: colors[i % colors.length] });
+  }
+
+  const founderPayout = remaining * (finalFounderOwnership / (totalInvestorOwnership + finalFounderOwnership));
+  items.push({ label: 'Founder / Team', value: founderPayout, color: '#059669' });
+
+  return items;
+}
+
+// ── Render Rounds Table ──
+function renderRoundsTable() {
+  const tbody = document.getElementById('roundsBody');
+  let ownership = 1.0;
+  let html = '';
+
+  for (let i = 0; i < rounds.length; i++) {
+    const r = rounds[i];
+    const dilution = r.amount / (r.preMoney + r.amount);
+    ownership *= (1 - dilution);
+
+    html += `<tr>
+      <td class="round-name">${r.name}</td>
+      <td><input class="round-input" data-idx="${i}" data-field="amount" value="${r.amount}" type="number" step="0.5" min="0.1">M</td>
+      <td><input class="round-input" data-idx="${i}" data-field="preMoney" value="${r.preMoney}" type="number" step="1" min="1">M</td>
+      <td class="computed-cell dilution-cell">${(dilution * 100).toFixed(1)}%</td>
+      <td class="computed-cell ownership-cell">${(ownership * 100).toFixed(1)}%</td>
+      <td><input class="round-input" data-idx="${i}" data-field="gap" value="${r.gap}" type="number" step="0.5" min="0.5" style="width:45px">yr</td>
+      <td>${rounds.length > 1 ? `<button class="remove-round-btn" data-idx="${i}">&times;</button>` : ''}</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = html;
+
+  // Bind events
+  tbody.querySelectorAll('.round-input').forEach(input => {
+    input.addEventListener('change', () => {
+      const idx = parseInt(input.dataset.idx);
+      const field = input.dataset.field;
+      const val = parseFloat(input.value);
+      if (!isNaN(val) && val > 0) {
+        rounds[idx][field] = val;
+        update();
+      }
+    });
+  });
+  tbody.querySelectorAll('.remove-round-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      rounds.splice(idx, 1);
+      debtMix.splice(idx, 1);
+      debtTypes.splice(idx, 1);
+      update();
+    });
+  });
+
+  renderOwnershipBars();
+}
+
+function renderOwnershipBars() {
+  const container = document.getElementById('ownershipPreview');
+  const eqPath = computePath(false);
+  const blPath = computePath(true);
+  const hasDebt = debtMix.some(d => d > 0);
+
+  let html = '<div class="ownership-bar-row">';
+  html += '<div class="ownership-bar-label">Equity only</div>';
+  html += '<div class="ownership-bar-track">';
+  const eqPct = (eqPath.path[eqPath.path.length - 1].ownership * 100);
+  html += `<div class="ownership-bar-fill" style="width:${eqPct}%;background:${hasDebt ? '#e11d48' : '#2c5282'}"><span>${eqPct.toFixed(1)}%</span></div>`;
+  html += '</div></div>';
+
+  if (hasDebt) {
+    html += '<div class="ownership-bar-row">';
+    html += '<div class="ownership-bar-label">With debt</div>';
+    html += '<div class="ownership-bar-track">';
+    const blPct = (blPath.path[blPath.path.length - 1].ownership * 100);
+    html += `<div class="ownership-bar-fill" style="width:${blPct}%;background:#059669"><span>${blPct.toFixed(1)}%</span></div>`;
+    html += '</div></div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// ── Render Debt Grid ──
+function renderDebtGrid() {
+  const grid = document.getElementById('debtGrid');
+  let html = '';
+
+  for (let i = 0; i < rounds.length; i++) {
+    const r = rounds[i];
+    const pct = Math.round((debtMix[i] || 0) * 100);
+    const eqAmt = r.amount * (1 - (debtMix[i] || 0));
+    const debtAmt = r.amount * (debtMix[i] || 0);
+
+    html += `<div class="debt-round">
+      <div>
+        <div class="debt-round-name">${r.name}</div>
+        <div class="debt-split-summary">
+          <span class="equity-part">${fmtDollars(eqAmt)} eq</span>
+          ${debtAmt > 0 ? `<span class="debt-part">${fmtDollars(debtAmt)} debt</span>` : ''}
+        </div>
+      </div>
+      <div class="debt-slider-wrap">
+        <input type="range" class="debt-slider" data-idx="${i}" min="0" max="80" value="${pct}" step="5">
+        <span class="debt-pct">${pct}%</span>
+      </div>
+      <select class="debt-type-select" data-idx="${i}">
+        ${DEBT_TYPES.map(dt => `<option value="${dt.value}" ${debtTypes[i] === dt.value ? 'selected' : ''}>${dt.label}</option>`).join('')}
+      </select>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.debt-slider').forEach(slider => {
+    slider.addEventListener('input', () => {
+      const idx = parseInt(slider.dataset.idx);
+      debtMix[idx] = parseInt(slider.value) / 100;
+      update();
+    });
+  });
+  grid.querySelectorAll('.debt-type-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const idx = parseInt(sel.dataset.idx);
+      debtTypes[idx] = sel.value;
+    });
+  });
+}
+
+// ── Canvas Helpers ──
 function setupCanvas(canvas) {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
@@ -787,846 +1048,553 @@ function setupCanvas(canvas) {
   return { ctx, W: rect.width, H: rect.height };
 }
 
-const PAD = { top: 15, right: 15, bottom: 44, left: 55 };
+// ── Ownership Chart ──
+function drawOwnershipChart() {
+  const canvas = document.getElementById('ownershipChart');
+  const { ctx, W, H } = setupCanvas(canvas);
 
-function chartArea(W, H) {
-  return { x: PAD.left, y: PAD.top, w: W - PAD.left - PAD.right, h: H - PAD.top - PAD.bottom };
-}
+  const eqPath = computePath(false).path;
+  const blPath = computePath(true).path;
+  const hasDebt = debtMix.some(d => d > 0);
 
-function valToPixel(val, minV, maxV, pixMin, pixSize, logScale) {
-  if (logScale === 'sqrt') {
-    const t = (Math.sqrt(val) - Math.sqrt(minV)) / (Math.sqrt(maxV) - Math.sqrt(minV));
-    return pixMin + pixSize * t;
-  }
-  if (logScale) {
-    const t = (Math.log10(val) - Math.log10(minV)) / (Math.log10(maxV) - Math.log10(minV));
-    return pixMin + pixSize * t;
-  }
-  return pixMin + pixSize * ((val - minV) / (maxV - minV));
-}
+  const pad = { top: 20, right: 25, bottom: 50, left: 55 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
 
-function pixelToVal(px, minV, maxV, pixMin, pixSize, logScale) {
-  const t = Math.max(0, Math.min(1, (px - pixMin) / pixSize));
-  if (logScale === 'sqrt') {
-    const sqrtMin = Math.sqrt(minV), sqrtMax = Math.sqrt(maxV);
-    const v = sqrtMin + (sqrtMax - sqrtMin) * t;
-    return v * v;
-  }
-  if (logScale) {
-    return Math.pow(10, Math.log10(minV) + (Math.log10(maxV) - Math.log10(minV)) * t);
-  }
-  return minV + (maxV - minV) * t;
-}
+  // Find total time
+  const totalTime = eqPath[eqPath.length - 1].time;
+  if (totalTime === 0) return;
 
-function generateTicks(min, max, count, log) {
-  const ticks = [];
-  if (log === 'sqrt') {
-    const sqrtMin = Math.sqrt(min), sqrtMax = Math.sqrt(max);
-    const candidates = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
-    const eligible = candidates.filter(v => v >= min && v <= max);
-    const result = [];
-    for (const v of eligible) {
-      const pos = (Math.sqrt(v) - sqrtMin) / (sqrtMax - sqrtMin);
-      const lastPos = result.length ? (Math.sqrt(result[result.length - 1]) - sqrtMin) / (sqrtMax - sqrtMin) : -1;
-      if (pos - lastPos > 0.08) result.push(v);
-    }
-    return result;
-  }
-  if (log) {
-    const logMin = Math.floor(Math.log10(min));
-    const logMax = Math.ceil(Math.log10(max));
-    for (let e = logMin; e <= logMax; e++) {
-      for (const m of [1, 2, 5]) {
-        const v = Math.pow(10, e) * m;
-        if (v >= min && v <= max) ticks.push(v);
-      }
-    }
-  } else {
-    const range = max - min;
-    const rough = range / count;
-    const mag = Math.pow(10, Math.floor(Math.log10(rough)));
-    const norm = rough / mag;
-    let nice = norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10;
-    const step = nice * mag;
-    for (let v = Math.ceil(min / step) * step; v <= max; v += step) {
-      ticks.push(Math.round(v * 1000) / 1000);
-    }
-  }
-  return ticks;
-}
+  const xOf = (t) => pad.left + (t / totalTime) * cw;
+  const yOf = (o) => pad.top + (1 - o) * ch;
 
-function drawGrid(ctx, area, xRange, yRange, xLabel, yLabel, xFmt, yFmt, xLog, yLog) {
-  const xTicks = generateTicks(xRange[0], xRange[1], 6, xLog);
-  const yTicks = generateTicks(yRange[0], yRange[1], 6, yLog);
+  // Clear
+  ctx.clearRect(0, 0, W, H);
 
+  // Grid
   ctx.strokeStyle = '#e8e8e3';
   ctx.lineWidth = 1;
-  ctx.setLineDash([]);
-
-  for (const xv of xTicks) {
-    const px = valToPixel(xv, xRange[0], xRange[1], area.x, area.w, xLog);
-    ctx.beginPath(); ctx.moveTo(px, area.y); ctx.lineTo(px, area.y + area.h); ctx.stroke();
-  }
-  for (const yv of yTicks) {
-    const py = area.y + area.h - valToPixel(yv, yRange[0], yRange[1], 0, area.h, yLog);
-    ctx.beginPath(); ctx.moveTo(area.x, py); ctx.lineTo(area.x + area.w, py); ctx.stroke();
+  for (let p = 0; p <= 100; p += 20) {
+    const y = yOf(p / 100);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
   }
 
+  // Axes
   ctx.strokeStyle = '#ccccc5';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(area.x, area.y); ctx.lineTo(area.x, area.y + area.h); ctx.lineTo(area.x + area.w, area.y + area.h);
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + ch);
+  ctx.lineTo(pad.left + cw, pad.top + ch);
   ctx.stroke();
 
+  // Y labels
   ctx.font = '10px -apple-system, sans-serif';
   ctx.fillStyle = '#9b9b91';
-  ctx.textAlign = 'center';
-  for (const xv of xTicks) {
-    const px = valToPixel(xv, xRange[0], xRange[1], area.x, area.w, xLog);
-    ctx.fillText(xFmt(xv), px, area.y + area.h + 16);
-  }
   ctx.textAlign = 'right';
-  for (const yv of yTicks) {
-    const py = area.y + area.h - valToPixel(yv, yRange[0], yRange[1], 0, area.h, yLog);
-    ctx.fillText(yFmt(yv), area.x - 6, py + 3);
+  for (let p = 0; p <= 100; p += 20) {
+    ctx.fillText(p + '%', pad.left - 6, yOf(p / 100) + 3);
   }
 
+  // X labels (round names)
+  ctx.textAlign = 'center';
+  for (const pt of eqPath) {
+    ctx.fillText(pt.label, xOf(pt.time), pad.top + ch + 16);
+  }
+
+  // Axis titles
   ctx.fillStyle = '#9b9b91';
   ctx.font = '10px -apple-system, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(xLabel, area.x + area.w / 2, area.y + area.h + 34);
+  ctx.fillText('Round', pad.left + cw / 2, H - 8);
   ctx.save();
-  ctx.translate(13, area.y + area.h / 2);
+  ctx.translate(13, pad.top + ch / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText(yLabel, 0, 0);
+  ctx.fillText('Founder Ownership', 0, 0);
   ctx.restore();
-}
 
-function drawDot(ctx, px, py, color) {
-  ctx.beginPath(); ctx.arc(px, py, 16, 0, Math.PI * 2);
-  ctx.fillStyle = color + '18'; ctx.fill();
-  ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2);
-  ctx.strokeStyle = color + '60'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.beginPath(); ctx.arc(px, py, 5.5, 0, Math.PI * 2);
-  ctx.fillStyle = color; ctx.fill();
-}
+  // If debt is active, draw shaded gap
+  if (hasDebt) {
+    ctx.beginPath();
+    // Forward along equity-only (lower line)
+    for (let i = 0; i < eqPath.length; i++) {
+      const x = xOf(eqPath[i].time), y = yOf(eqPath[i].ownership);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    // Backward along blended (upper line)
+    for (let i = blPath.length - 1; i >= 0; i--) {
+      ctx.lineTo(xOf(blPath[i].time), yOf(blPath[i].ownership));
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(5, 150, 105, 0.12)';
+    ctx.fill();
+  }
 
-function drawCrosshair(ctx, px, py, area) {
-  ctx.strokeStyle = 'rgba(44, 82, 130, 0.2)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([5, 4]);
-  ctx.beginPath(); ctx.moveTo(px, area.y); ctx.lineTo(px, area.y + area.h); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(area.x, py); ctx.lineTo(area.x + area.w, py); ctx.stroke();
+  // Draw equity-only line
+  ctx.beginPath();
+  ctx.strokeStyle = hasDebt ? '#e11d48' : '#2c5282';
+  ctx.lineWidth = 2;
+  ctx.setLineDash(hasDebt ? [6, 4] : []);
+  for (let i = 0; i < eqPath.length; i++) {
+    const x = xOf(eqPath[i].time), y = yOf(eqPath[i].ownership);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
   ctx.setLineDash([]);
-}
 
-// ── Inline input helper ──
-function makeInlineInput(value, suffix, widthCh, onChange) {
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'inline-input';
-  input.value = value;
-  input.style.width = Math.max(3, widthCh) + 'ch';
-  input.addEventListener('focus', () => { input.select(); });
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { input.blur(); }
-    if (e.key === 'Escape') { input.blur(); }
-  });
-  input.addEventListener('blur', () => {
-    let raw = input.value.trim().toLowerCase();
-    let multiplier = 1;
-    if (raw.endsWith('b')) { multiplier = 1000; raw = raw.slice(0, -1); }
-    else if (raw.endsWith('m')) { raw = raw.slice(0, -1); }
-    else if (raw.endsWith('k')) { multiplier = 0.001; raw = raw.slice(0, -1); }
-    const num = parseFloat(raw) * multiplier;
-    if (!isNaN(num) && num > 0) {
-      onChange(num);
-      update();
-    } else {
-      // revert handled by next redraw
-      update();
-    }
-  });
-  return input;
-}
-
-// ── Draw Round Chart ──
-function drawRoundChart() {
-  const canvas = document.getElementById('roundChart');
-  const { ctx, W, H } = setupCanvas(canvas);
-  const area = chartArea(W, H);
-
-  const res = 50;
-  for (let ix = 0; ix < res; ix++) {
-    for (let iy = 0; iy < res; iy++) {
-      const a = pixelToVal(area.x + area.w * (ix + 0.5) / res, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
-      const v = pixelToVal(area.h * (iy + 0.5) / res, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
-      const dilution = a / (a + v);
-      const r = Math.round(lerp(250, 220, dilution));
-      const g = Math.round(lerp(250, 230, dilution));
-      const b = Math.round(lerp(248, 225, dilution));
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      const cellW = area.w / res;
-      const cellH = area.h / res;
-      ctx.fillRect(area.x + cellW * ix, area.y + area.h - cellH * (iy + 1), cellW + 0.5, cellH + 0.5);
-    }
+  // Dots on equity line
+  for (let i = 0; i < eqPath.length; i++) {
+    ctx.beginPath();
+    ctx.arc(xOf(eqPath[i].time), yOf(eqPath[i].ownership), 4, 0, Math.PI * 2);
+    ctx.fillStyle = hasDebt ? '#e11d48' : '#2c5282';
+    ctx.fill();
   }
 
-  for (const pct of [0.1, 0.2, 0.3, 0.4, 0.5]) {
-    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-    ctx.lineWidth = 1;
+  // Draw blended line (if debt active)
+  if (hasDebt) {
     ctx.beginPath();
-    let first = true;
-    for (let i = 0; i <= 100; i++) {
-      const a = lerp(round_xRange[0], round_xRange[1], i / 100);
-      const v = a * (1 - pct) / pct;
-      if (v < round_yRange[0] || v > round_yRange[1]) continue;
-      const px = valToPixel(a, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
-      const py = area.y + area.h - valToPixel(v, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
-      if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < blPath.length; i++) {
+      const x = xOf(blPath[i].time), y = yOf(blPath[i].ownership);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.stroke();
 
-    const aL = round_xRange[1] * 0.55;
-    const vL = aL * (1 - pct) / pct;
-    if (vL >= round_yRange[0] && vL <= round_yRange[1]) {
-      const lx = valToPixel(aL, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
-      const ly = area.y + area.h - valToPixel(vL, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
-      ctx.fillStyle = 'rgba(0,0,0,0.22)';
-      ctx.font = '9px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(Math.round(pct * 100) + '% dilution', lx, ly - 5);
+    for (let i = 0; i < blPath.length; i++) {
+      ctx.beginPath();
+      ctx.arc(xOf(blPath[i].time), yOf(blPath[i].ownership), 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#059669';
+      ctx.fill();
     }
-  }
 
-  drawGrid(ctx, area, round_xRange, round_yRange, 'Amount Raised', 'Pre-Money Valuation', v => fmt(v), v => fmt(v), 'sqrt', 'sqrt');
-
-  const px = valToPixel(amount, round_xRange[0], round_xRange[1], area.x, area.w, 'sqrt');
-  const py = area.y + area.h - valToPixel(valuation, round_yRange[0], round_yRange[1], 0, area.h, 'sqrt');
-  drawCrosshair(ctx, px, py, area);
-  drawDot(ctx, px, py, '#2c5282');
-
-  const dilution = amount / (amount + valuation) * 100;
-  const el = document.getElementById('roundReadout');
-  el.innerHTML = '';
-  el.appendChild(document.createTextNode('Raising '));
-  const amtSuffix = fmtSuffix(amount);
-  const amtInput = makeInlineInput(fmtPlain(amount), amtSuffix, fmtPlain(amount).length + 1, (v) => {
-    amount = Math.max(round_xRange[0], Math.min(round_xRange[1], v));
-  });
-  const amtWrap = document.createElement('strong');
-  amtWrap.appendChild(document.createTextNode('$'));
-  amtWrap.appendChild(amtInput);
-  amtWrap.appendChild(document.createTextNode(amtSuffix));
-  el.appendChild(amtWrap);
-  el.appendChild(document.createTextNode(' at '));
-  const valSuffix = fmtSuffix(valuation);
-  const valInput = makeInlineInput(fmtPlain(valuation), valSuffix, fmtPlain(valuation).length + 1, (v) => {
-    valuation = Math.max(round_yRange[0], Math.min(round_yRange[1], v));
-  });
-  const valWrap = document.createElement('strong');
-  valWrap.appendChild(document.createTextNode('$'));
-  valWrap.appendChild(valInput);
-  valWrap.appendChild(document.createTextNode(valSuffix));
-  el.appendChild(valWrap);
-  el.appendChild(document.createTextNode(' pre-money \u2192 '));
-  const dilSpan = document.createElement('strong');
-  dilSpan.textContent = dilution.toFixed(1) + '%';
-  el.appendChild(dilSpan);
-  el.appendChild(document.createTextNode(' dilution'));
-}
-
-// ── Draw Exit Chart ──
-function drawExitChart() {
-  const canvas = document.getElementById('exitChart');
-  const { ctx, W, H } = setupCanvas(canvas);
-  const area = chartArea(W, H);
-
-  const res = 50;
-  for (let ix = 0; ix < res; ix++) {
-    for (let iy = 0; iy < res; iy++) {
-      const t = pixelToVal(area.x + area.w * (ix + 0.5) / res, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
-      const e = pixelToVal(area.h * (iy + 0.5) / res, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-      const r = calcRate(amount, valuation, e, t);
-      let red = 250, green = 250, blue = 248;
-      if (r !== null && isFinite(r)) {
-        if (r < 0) { green = lerp(250, 240, Math.min(1, Math.abs(r) * 2)); blue = lerp(248, 245, Math.min(1, Math.abs(r) * 2)); }
-        else if (r < 0.12) { const p = r / 0.12; red = lerp(250, 235, p); green = lerp(250, 248, p); blue = lerp(248, 235, p); }
-        else if (r < 0.25) { const p = (r - 0.12) / 0.13; red = lerp(235, 248, p); green = lerp(248, 238, p); blue = lerp(235, 220, p); }
-        else if (r < 0.50) { const p = (r - 0.25) / 0.25; red = lerp(248, 240, p); green = lerp(238, 220, p); blue = lerp(220, 210, p); }
-        else { const p = Math.min(1, (r - 0.50) / 0.50); red = lerp(240, 230, p); green = lerp(220, 205, p); blue = lerp(210, 200, p); }
+    // Annotations: delta at each point
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 1; i < eqPath.length; i++) {
+      const delta = (blPath[i].ownership - eqPath[i].ownership) * 100;
+      if (delta > 0.1) {
+        const midY = (yOf(blPath[i].ownership) + yOf(eqPath[i].ownership)) / 2;
+        ctx.fillStyle = '#059669';
+        ctx.fillText('+' + delta.toFixed(1) + '%', xOf(eqPath[i].time) + 22, midY + 3);
       }
-      ctx.fillStyle = `rgb(${Math.round(red)},${Math.round(green)},${Math.round(blue)})`;
-      const cellW = area.w / res;
-      const cellH = area.h / res;
-      ctx.fillRect(area.x + cellW * ix, area.y + area.h - cellH * (iy + 1), cellW + 0.5, cellH + 0.5);
     }
   }
 
-  // Iso-rate contours
-  const postMoney = valuation + amount;
-  for (const targetRate of [0.07, 0.10, 0.14, 0.20, 0.40, 0.60, 1.00]) {
-    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    let first = true;
-    for (let i = 0; i <= 100; i++) {
-      const t = lerp(exit_xRange[0], exit_xRange[1], i / 100);
-      const e = postMoney * Math.pow(1 + targetRate, t);
-      if (e < exit_yRange[0] || e > exit_yRange[1]) continue;
-      const px = valToPixel(t, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
-      const py = area.y + area.h - valToPixel(e, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-      if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
+  // Legend
+  const legendY = pad.top + 6;
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
 
-    const tL = lerp(exit_xRange[0], exit_xRange[1], 0.22);
-    const eL = postMoney * Math.pow(1 + targetRate, tL);
-    if (eL >= exit_yRange[0] && eL <= exit_yRange[1]) {
-      const lx = valToPixel(tL, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
-      const ly = area.y + area.h - valToPixel(eL, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.font = '9px -apple-system, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(Math.round(targetRate * 100) + '%', lx + 3, ly - 4);
-    }
-  }
+  ctx.fillStyle = hasDebt ? '#e11d48' : '#2c5282';
+  ctx.fillRect(pad.left + 5, legendY - 4, 14, 2);
+  if (hasDebt) ctx.setLineDash([3, 2]);
+  ctx.fillText('Equity only', pad.left + 24, legendY);
 
-  drawGrid(ctx, area, exit_xRange, exit_yRange, 'Time to Exit (years)', 'Exit Valuation', v => v + 'y', v => fmt(v), false, true);
-
-  if (rangeMode) {
-    // Draw range band
-    const timePx = valToPixel(exitTime, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
-    const pyLow = area.y + area.h - valToPixel(exitValLow, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-    const pyHigh = area.y + area.h - valToPixel(exitValHigh, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-
-    // Band fill
-    ctx.fillStyle = 'rgba(44, 82, 130, 0.08)';
-    ctx.fillRect(timePx - 12, pyHigh, 24, pyLow - pyHigh);
-
-    // Band line
-    ctx.strokeStyle = 'rgba(44, 82, 130, 0.25)';
-    ctx.lineWidth = 2;
+  if (hasDebt) {
     ctx.setLineDash([]);
-    ctx.beginPath(); ctx.moveTo(timePx, pyLow); ctx.lineTo(timePx, pyHigh); ctx.stroke();
-
-    // Crosshairs
-    drawCrosshair(ctx, timePx, pyLow, area);
-    drawCrosshair(ctx, timePx, pyHigh, area);
-
-    const rLow = calcRate(amount, valuation, exitValLow, exitTime);
-    const rHigh = calcRate(amount, valuation, exitValHigh, exitTime);
-    const colorLow = (rLow !== null && isFinite(rLow)) ? rateColor(rLow) : '#2c5282';
-    const colorHigh = (rHigh !== null && isFinite(rHigh)) ? rateColor(rHigh) : '#2c5282';
-    drawDot(ctx, timePx, pyLow, colorLow);
-    drawDot(ctx, timePx, pyHigh, colorHigh);
-
-    // Readout
-    const el = document.getElementById('exitReadout');
-    el.innerHTML = '';
-    el.appendChild(document.createTextNode('Exit between '));
-    const lowInput = makeInlineInput(fmtPlain(exitValLow), fmtSuffix(exitValLow), fmtPlain(exitValLow).length + 1, (v) => {
-      exitValLow = Math.max(exit_yRange[0], Math.min(exitValHigh - 1, v));
-    });
-    const lowWrap = document.createElement('strong');
-    lowWrap.appendChild(document.createTextNode('$'));
-    lowWrap.appendChild(lowInput);
-    lowWrap.appendChild(document.createTextNode(fmtSuffix(exitValLow)));
-    el.appendChild(lowWrap);
-    el.appendChild(document.createTextNode(' and '));
-    const highInput = makeInlineInput(fmtPlain(exitValHigh), fmtSuffix(exitValHigh), fmtPlain(exitValHigh).length + 1, (v) => {
-      exitValHigh = Math.max(exitValLow + 1, Math.min(exit_yRange[1], v));
-    });
-    const highWrap = document.createElement('strong');
-    highWrap.appendChild(document.createTextNode('$'));
-    highWrap.appendChild(highInput);
-    highWrap.appendChild(document.createTextNode(fmtSuffix(exitValHigh)));
-    el.appendChild(highWrap);
-    el.appendChild(document.createTextNode(' in '));
-    const timeInput = makeInlineInput(exitTime.toString(), 'yrs', 2, (v) => {
-      exitTime = Math.max(exit_xRange[0], Math.min(exit_xRange[1], Math.round(v)));
-    });
-    const timeWrap = document.createElement('strong');
-    timeWrap.appendChild(timeInput);
-    timeWrap.appendChild(document.createTextNode(' yrs'));
-    el.appendChild(timeWrap);
-
-  } else {
-    const px = valToPixel(exitTime, exit_xRange[0], exit_xRange[1], area.x, area.w, false);
-    const py = area.y + area.h - valToPixel(exitVal, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-    drawCrosshair(ctx, px, py, area);
-
-    const r = calcRate(amount, valuation, exitVal, exitTime);
-    const dotColor = (r !== null && isFinite(r)) ? rateColor(r) : '#2c5282';
-    drawDot(ctx, px, py, dotColor);
-
-    const investorReturn = exitVal * (amount / postMoney);
-    const multiple = investorReturn / amount;
-    const el = document.getElementById('exitReadout');
-    el.innerHTML = '';
-    el.appendChild(document.createTextNode('Exit at '));
-    const exitInput = makeInlineInput(fmtPlain(exitVal), fmtSuffix(exitVal), fmtPlain(exitVal).length + 1, (v) => {
-      exitVal = Math.max(exit_yRange[0], Math.min(exit_yRange[1], v));
-    });
-    const exitWrap = document.createElement('strong');
-    exitWrap.appendChild(document.createTextNode('$'));
-    exitWrap.appendChild(exitInput);
-    exitWrap.appendChild(document.createTextNode(fmtSuffix(exitVal)));
-    el.appendChild(exitWrap);
-    el.appendChild(document.createTextNode(' in '));
-    const timeInput = makeInlineInput(exitTime.toString(), 'yrs', 2, (v) => {
-      exitTime = Math.max(exit_xRange[0], Math.min(exit_xRange[1], Math.round(v)));
-    });
-    const timeWrap = document.createElement('strong');
-    timeWrap.appendChild(timeInput);
-    timeWrap.appendChild(document.createTextNode(' yrs'));
-    el.appendChild(timeWrap);
-    el.appendChild(document.createTextNode(' \u2192 investor gets '));
-    const retSpan = document.createElement('strong');
-    retSpan.textContent = fmt(Math.round(investorReturn));
-    el.appendChild(retSpan);
-    el.appendChild(document.createTextNode(' (' + multiple.toFixed(1) + 'x)'));
+    ctx.fillStyle = '#059669';
+    ctx.fillRect(pad.left + 5, legendY + 14, 14, 3);
+    ctx.fillText('With debt', pad.left + 24, legendY + 18);
   }
 }
 
-// ── Comparison strip ──
-function drawStrip() {
-  const canvas = document.getElementById('stripChart');
+// ── Waterfall Chart ──
+function drawWaterfallChart() {
+  const canvas = document.getElementById('waterfallChart');
   const { ctx, W, H } = setupCanvas(canvas);
 
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, '#f0faf4');
-  grad.addColorStop(0.25, '#fefce8');
-  grad.addColorStop(0.5, '#fff7ed');
-  grad.addColorStop(1, '#fef2f2');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
+  const hasDebt = debtMix.some(d => d > 0);
+  const eqPath = computePath(false);
+  const blPath = computePath(true);
 
-  const benchmarks = [
-    { rate: 0.03, label: 'DOE' },
-    { rate: 0.07, label: 'SBA' },
-    { rate: 0.10, label: 'Lease' },
-    { rate: 0.14, label: 'V.Debt' },
-    { rate: 0.20, label: 'Mezz' },
-  ];
+  const eqWaterfall = computeWaterfall(eqPath.path, exitValue, false);
+  const blWaterfall = hasDebt ? computeWaterfall(blPath.path, exitValue, true) : null;
 
-  const maxRate = 0.60;
-  const toX = (r) => Math.max(0, Math.min(1, r / maxRate)) * W;
+  const pad = { top: 25, right: 15, bottom: 55, left: 55 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
 
-  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.clearRect(0, 0, W, H);
+
+  // Axes
+  ctx.strokeStyle = '#ccccc5';
   ctx.lineWidth = 1;
-  for (const b of benchmarks) {
-    const x = toX(b.rate);
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + ch);
+  ctx.lineTo(pad.left + cw, pad.top + ch);
+  ctx.stroke();
+
+  // Y scale
+  const maxVal = exitValue;
+  const yOf = (v) => pad.top + ch - (v / maxVal) * ch;
+
+  // Grid
+  ctx.strokeStyle = '#e8e8e3';
+  const yStep = maxVal <= 200 ? 50 : maxVal <= 500 ? 100 : maxVal <= 1000 ? 200 : 500;
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.fillStyle = '#9b9b91';
+  ctx.textAlign = 'right';
+  for (let v = 0; v <= maxVal; v += yStep) {
+    const y = yOf(v);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillText(fmt(v), pad.left - 6, y + 3);
   }
 
-  if (rangeMode) {
-    const rLow = calcRate(amount, valuation, exitValHigh, exitTime); // higher exit = lower rate
-    const rHigh = calcRate(amount, valuation, exitValLow, exitTime); // lower exit = higher rate
-    if (rLow !== null && rHigh !== null && isFinite(rLow) && isFinite(rHigh) && rHigh > 0) {
-      const xLow = toX(Math.max(0, Math.min(rLow, maxRate)));
-      const xHigh = toX(Math.min(rHigh, maxRate));
-      const colorLow = rateColor(rLow);
-      const colorHigh = rateColor(rHigh);
+  function drawStack(items, xCenter, barWidth, label) {
+    let cumY = 0;
+    for (const item of items) {
+      const barH = (item.value / maxVal) * ch;
+      const y = pad.top + ch - cumY - barH;
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.roundRect(xCenter - barWidth / 2, y, barWidth, barH, 3);
+      ctx.fill();
 
-      // Filled band
-      const bandGrad = ctx.createLinearGradient(xLow, 0, xHigh, 0);
-      bandGrad.addColorStop(0, colorLow + '25');
-      bandGrad.addColorStop(1, colorHigh + '25');
-      ctx.fillStyle = bandGrad;
-      ctx.fillRect(xLow, 0, xHigh - xLow, H);
-
-      // Left line
-      ctx.strokeStyle = colorLow;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(xLow, 0); ctx.lineTo(xLow, H); ctx.stroke();
-
-      // Right line
-      ctx.strokeStyle = colorHigh;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(xHigh, 0); ctx.lineTo(xHigh, H); ctx.stroke();
-
-      // Label
-      const midX = (xLow + xHigh) / 2;
-      ctx.fillStyle = colorHigh;
-      ctx.font = 'bold 11px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('YOU: ' + (rLow * 100).toFixed(0) + '–' + (rHigh * 100).toFixed(0) + '%', midX, H / 2 + 4);
-    }
-  } else {
-    const r = calcRate(amount, valuation, exitVal, exitTime);
-    if (r !== null && isFinite(r) && r > 0) {
-      const x = toX(Math.min(r, maxRate));
-      const color = rateColor(r);
-
-      ctx.fillStyle = color + '20';
-      ctx.fillRect(0, 0, x, H);
-
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-
-      ctx.fillStyle = color;
-      ctx.font = 'bold 11px -apple-system, sans-serif';
-      ctx.textAlign = r > maxRate * 0.85 ? 'right' : 'left';
-      const labelX = r > maxRate * 0.85 ? x - 6 : x + 6;
-      ctx.fillText('YOU: ' + (r * 100).toFixed(0) + '%', labelX, H / 2 + 4);
-    }
-  }
-}
-
-// ── Scenarios ──
-const SCENARIOS_KEY = 'cheapmoney_scenarios';
-const MAX_SCENARIOS = 5;
-
-function loadScenarios() {
-  try { return JSON.parse(localStorage.getItem(SCENARIOS_KEY)) || []; }
-  catch { return []; }
-}
-function saveScenarios(list) {
-  localStorage.setItem(SCENARIOS_KEY, JSON.stringify(list));
-}
-
-function scenarioSummary(s) {
-  const r = calcRate(s.a, s.v, s.e || s.eh, s.t);
-  if (s.el && s.eh) {
-    const rLow = calcRate(s.a, s.v, s.eh, s.t);
-    const rHigh = calcRate(s.a, s.v, s.el, s.t);
-    return fmt(s.a) + ' at ' + fmt(s.v) + ' pre \u2192 exit ' + fmt(s.el) + '\u2013' + fmt(s.eh) + ' / ' + s.t + 'yr';
-  }
-  return fmt(s.a) + ' at ' + fmt(s.v) + ' pre \u2192 exit ' + fmt(s.e) + ' / ' + s.t + 'yr';
-}
-
-function scenarioRateText(s) {
-  if (s.el && s.eh) {
-    const rLow = calcRate(s.a, s.v, s.eh, s.t);
-    const rHigh = calcRate(s.a, s.v, s.el, s.t);
-    if (rLow !== null && rHigh !== null && isFinite(rLow) && isFinite(rHigh)) {
-      return (rLow * 100).toFixed(0) + '\u2013' + (rHigh * 100).toFixed(0) + '%';
-    }
-    return '\u2014';
-  }
-  const r = calcRate(s.a, s.v, s.e, s.t);
-  if (r !== null && isFinite(r)) return (r * 100).toFixed(1) + '%';
-  return '\u2014';
-}
-
-function scenarioRateClass(s) {
-  const e = s.el ? s.eh : s.e;
-  const r = calcRate(s.a, s.v, e, s.t);
-  if (r !== null && isFinite(r)) return rateClass(r);
-  return '';
-}
-
-function renderScenarios() {
-  const list = loadScenarios();
-  const container = document.getElementById('scenariosList');
-  const emptyEl = document.getElementById('scenarioEmpty');
-  const saveBtn = document.getElementById('saveBtn');
-
-  container.innerHTML = '';
-  if (list.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'scenario-empty';
-    empty.id = 'scenarioEmpty';
-    empty.textContent = 'Save your current scenario to compare it against other offers.';
-    container.appendChild(empty);
-  }
-
-  saveBtn.disabled = list.length >= MAX_SCENARIOS;
-
-  list.forEach((s, i) => {
-    const row = document.createElement('div');
-    row.className = 'scenario-row';
-
-    const nameInput = document.createElement('input');
-    nameInput.className = 'scenario-name';
-    nameInput.value = s.name;
-    nameInput.addEventListener('blur', () => {
-      const items = loadScenarios();
-      items[i].name = nameInput.value || ('Scenario ' + String.fromCharCode(65 + i));
-      saveScenarios(items);
-    });
-    nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') nameInput.blur(); });
-    row.appendChild(nameInput);
-
-    const summary = document.createElement('span');
-    summary.className = 'scenario-summary';
-    summary.textContent = scenarioSummary(s);
-    row.appendChild(summary);
-
-    const rateSpan = document.createElement('span');
-    rateSpan.className = 'scenario-rate ' + scenarioRateClass(s);
-    rateSpan.textContent = scenarioRateText(s);
-    row.appendChild(rateSpan);
-
-    const loadBtn = document.createElement('button');
-    loadBtn.className = 'scenario-btn';
-    loadBtn.textContent = 'Load';
-    loadBtn.addEventListener('click', () => {
-      amount = s.a; valuation = s.v; exitTime = s.t;
-      if (s.el && s.eh) {
-        rangeMode = true;
-        exitValLow = s.el; exitValHigh = s.eh;
-        document.getElementById('rangeToggle').classList.add('active');
-      } else {
-        rangeMode = false;
-        exitVal = s.e;
-        document.getElementById('rangeToggle').classList.remove('active');
+      // Label inside bar if big enough
+      if (barH > 18) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '600 10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(fmt(item.value), xCenter, y + barH / 2 + 3);
       }
-      update();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    row.appendChild(loadBtn);
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'scenario-btn del';
-    delBtn.textContent = '\u00d7';
-    delBtn.addEventListener('click', () => {
-      const items = loadScenarios();
-      items.splice(i, 1);
-      saveScenarios(items);
-      renderScenarios();
-    });
-    row.appendChild(delBtn);
+      cumY += barH;
+    }
 
-    container.appendChild(row);
-  });
+    // Bottom label
+    ctx.fillStyle = '#9b9b91';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, xCenter, pad.top + ch + 16);
+  }
+
+  if (hasDebt && blWaterfall) {
+    const barW = Math.min(cw * 0.3, 80);
+    const gap = cw * 0.15;
+    const cx1 = pad.left + cw / 2 - gap / 2 - barW / 2;
+    const cx2 = pad.left + cw / 2 + gap / 2 + barW / 2;
+    drawStack(eqWaterfall, cx1, barW, 'Equity Only');
+    drawStack(blWaterfall, cx2, barW, 'With Debt');
+
+    // Bracket showing founder delta
+    const eqFounder = eqWaterfall[eqWaterfall.length - 1].value;
+    const blFounder = blWaterfall[blWaterfall.length - 1].value;
+    if (blFounder > eqFounder) {
+      ctx.fillStyle = '#059669';
+      ctx.font = '600 11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('+' + fmt(blFounder - eqFounder), pad.left + cw / 2, pad.top + ch + 36);
+    }
+  } else {
+    const barW = Math.min(cw * 0.4, 100);
+    drawStack(eqWaterfall, pad.left + cw / 2, barW, 'Exit Proceeds');
+  }
+
+  // Legend
+  ctx.font = '9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  const legendItems = [
+    { color: '#059669', label: 'Founder / Team' },
+    { color: '#e11d48', label: 'Equity Investors' },
+  ];
+  if (hasDebt) legendItems.push({ color: '#6366f1', label: 'Debt Repayment' });
+
+  let lx = pad.left + 5;
+  for (const li of legendItems) {
+    ctx.fillStyle = li.color;
+    ctx.fillRect(lx, pad.top + 2, 8, 8);
+    ctx.fillStyle = '#9b9b91';
+    ctx.fillText(li.label, lx + 11, pad.top + 10);
+    lx += ctx.measureText(li.label).width + 20;
+  }
 }
 
-document.getElementById('saveBtn').addEventListener('click', () => {
-  const list = loadScenarios();
-  if (list.length >= MAX_SCENARIOS) return;
-  const name = 'Scenario ' + String.fromCharCode(65 + list.length);
-  const scenario = { name, a: amount, v: valuation, t: exitTime };
-  if (rangeMode) {
-    scenario.el = exitValLow;
-    scenario.eh = exitValHigh;
-  } else {
-    scenario.e = exitVal;
+// ── Sankey Chart ──
+let sankeyView = 'equity'; // 'equity' or 'blended'
+
+function drawSankey() {
+  const canvas = document.getElementById('sankeyChart');
+  const { ctx, W, H } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, W, H);
+
+  const useDebt = sankeyView === 'blended';
+  const pathData = computePath(useDebt).path;
+  const n = pathData.length; // includes "Founding" at index 0
+  if (n < 2) return;
+
+  const pad = { top: 30, right: 40, bottom: 30, left: 40 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
+
+  // Column x positions (evenly spaced)
+  const colX = [];
+  for (let i = 0; i < n; i++) {
+    colX.push(pad.left + (i / (n - 1)) * cw);
   }
-  list.push(scenario);
-  saveScenarios(list);
-  renderScenarios();
+
+  // Max bar height = chart height. Bar height proportional to ownership fraction (of 100%)
+  const barMaxH = ch * 0.85;
+  const barW = Math.min(cw / (n * 2.5), 36);
+
+  // Investor color palette
+  const invColors = ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#fecdd3'];
+  const founderColor = '#059669';
+  const founderColorLight = 'rgba(5, 150, 105, 0.15)';
+
+  // Compute stacked slices at each column
+  // Each column has: founder slice (bottom), plus accumulated investor slices (stacked above)
+  // We track who owns what at each stage
+  const stages = []; // each stage: { founder: fraction, investors: [{label, fraction, color}] }
+
+  // Stage 0: Founding = 100% founder
+  stages.push({ founder: 1.0, investors: [] });
+
+  let cumulativeInvestors = [];
+  for (let i = 1; i < n; i++) {
+    const prevFounder = stages[i - 1].founder;
+    const dilution = pathData[i].dilution || 0;
+    const investorShare = prevFounder * dilution;
+    const newFounder = prevFounder * (1 - dilution);
+
+    // Copy previous investors (their absolute shares don't change — they already own their piece)
+    const investors = cumulativeInvestors.map(inv => ({ ...inv }));
+    investors.push({
+      label: pathData[i].label,
+      fraction: investorShare,
+      color: invColors[(i - 1) % invColors.length],
+    });
+    cumulativeInvestors = investors;
+
+    stages.push({ founder: newFounder, investors: [...investors] });
+  }
+
+  // Draw function for a bezier band between two columns
+  function drawBand(x1, y1top, y1bot, x2, y2top, y2bot, color, alpha) {
+    const cpOffset = (x2 - x1) * 0.45;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1top);
+    ctx.bezierCurveTo(x1 + cpOffset, y1top, x2 - cpOffset, y2top, x2, y2top);
+    ctx.lineTo(x2, y2bot);
+    ctx.bezierCurveTo(x2 - cpOffset, y2bot, x1 + cpOffset, y1bot, x1, y1bot);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // For each column, compute y-positions of each segment
+  // Layout: founder at top, investors stacked below
+  function getSliceYs(stageIdx) {
+    const s = stages[stageIdx];
+    const slices = [];
+    let yTop = pad.top + (ch - barMaxH) / 2;
+
+    // Founder slice
+    const fH = s.founder * barMaxH;
+    slices.push({ key: 'founder', top: yTop, bot: yTop + fH, fraction: s.founder });
+    yTop += fH;
+
+    // Investor slices (in order they were added — earliest first)
+    for (let j = 0; j < s.investors.length; j++) {
+      const inv = s.investors[j];
+      const iH = inv.fraction * barMaxH;
+      slices.push({ key: 'inv_' + j, top: yTop, bot: yTop + iH, fraction: inv.fraction, label: inv.label, color: inv.color });
+      yTop += iH;
+    }
+
+    return slices;
+  }
+
+  // Draw bands between consecutive columns
+  for (let i = 0; i < n - 1; i++) {
+    const leftSlices = getSliceYs(i);
+    const rightSlices = getSliceYs(i + 1);
+    const x1 = colX[i] + barW / 2;
+    const x2 = colX[i + 1] - barW / 2;
+
+    // Founder band: top slice in both columns
+    const lf = leftSlices[0];
+    const rf = rightSlices[0];
+    drawBand(x1, lf.top, lf.bot, x2, rf.top, rf.bot, founderColor, 0.35);
+
+    // Investor bands: for each investor that exists on BOTH sides, draw a continuing band
+    // Investors in the left column continue to the right column at the same index
+    for (let j = 0; j < leftSlices.length - 1; j++) {
+      const li = leftSlices[j + 1]; // investor j in left
+      if (!li) continue;
+      // This investor also exists in the right column at the same index (investors persist)
+      const ri = rightSlices[j + 1];
+      if (!ri) continue;
+      drawBand(x1, li.top, li.bot, x2, ri.top, ri.bot, li.color, 0.3);
+    }
+
+    // New investor appearing at right column (the last investor in rightSlices that doesn't exist in leftSlices)
+    if (rightSlices.length > leftSlices.length) {
+      const newInv = rightSlices[rightSlices.length - 1];
+      // This band peels off from the bottom of the founder band on the left
+      const founderBot = lf.bot;
+      const peelTop = founderBot - newInv.fraction * barMaxH;
+      drawBand(x1, peelTop, founderBot, x2, newInv.top, newInv.bot, newInv.color, 0.45);
+    }
+  }
+
+  // Draw column bars (nodes)
+  for (let i = 0; i < n; i++) {
+    const slices = getSliceYs(i);
+    const x = colX[i] - barW / 2;
+
+    for (const slice of slices) {
+      const h = slice.bot - slice.top;
+      if (h < 1) continue;
+
+      ctx.fillStyle = slice.key === 'founder' ? founderColor : slice.color;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.roundRect(x, slice.top, barW, h, 3);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Label inside bar if tall enough
+      if (h > 20 && slice.fraction > 0.03) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '600 10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        const pctText = (slice.fraction * 100).toFixed(1) + '%';
+        ctx.fillText(pctText, colX[i], slice.top + h / 2 + 3);
+      }
+    }
+
+    // Column label below
+    ctx.fillStyle = '#9b9b91';
+    ctx.font = i === 0 ? '600 11px -apple-system, sans-serif' : '11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pathData[i].label, colX[i], pad.top + (ch - barMaxH) / 2 + barMaxH + 18);
+  }
+
+  // Legend
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = founderColor;
+  ctx.fillRect(pad.left, pad.top - 18, 10, 10);
+  ctx.fillStyle = '#6b6b63';
+  ctx.fillText('Founder / Team', pad.left + 14, pad.top - 10);
+
+  ctx.fillStyle = invColors[0];
+  ctx.fillRect(pad.left + 120, pad.top - 18, 10, 10);
+  ctx.fillStyle = '#6b6b63';
+  ctx.fillText('Investors', pad.left + 134, pad.top - 10);
+}
+
+// ── Update Everything ──
+function update() {
+  // Ensure arrays match rounds length
+  while (debtMix.length < rounds.length) debtMix.push(0);
+  while (debtTypes.length < rounds.length) debtTypes.push('equipment');
+  debtMix.length = rounds.length;
+  debtTypes.length = rounds.length;
+
+  renderRoundsTable();
+  renderDebtGrid();
+
+  const eqPath = computePath(false);
+  const blPath = computePath(true);
+  const hasDebt = debtMix.some(d => d > 0);
+
+  const eqOwnership = eqPath.path[eqPath.path.length - 1].ownership;
+  const blOwnership = blPath.path[blPath.path.length - 1].ownership;
+  const delta = blOwnership - eqOwnership;
+
+  // Exit value display
+  document.getElementById('exitValDisplay').textContent = fmt(exitValue);
+
+  // Comparison cards
+  document.getElementById('eqOnlyPct').textContent = (eqOwnership * 100).toFixed(1) + '%';
+  document.getElementById('eqOnlyDollars').textContent = fmt(eqOwnership * exitValue) + ' at exit';
+  document.getElementById('blendedPct').textContent = (blOwnership * 100).toFixed(1) + '%';
+  document.getElementById('blendedDollars').textContent = fmt(blOwnership * exitValue) + ' at exit';
+
+  // Delta callout
+  const deltaEl = document.getElementById('deltaHeadline');
+  const deltaSubEl = document.getElementById('deltaSub');
+  if (hasDebt && delta > 0.001) {
+    deltaEl.textContent = '+' + (delta * 100).toFixed(1) + '%';
+    const totalDebt = blPath.totalDebtRaised;
+    deltaSubEl.innerHTML = `By layering <strong>${fmt(totalDebt)}</strong> in non-dilutive capital across your journey, you retained an additional <strong>${(delta * 100).toFixed(1)}%</strong> of your company — worth <strong>${fmt(delta * exitValue)}</strong> at this exit.`;
+    document.getElementById('deltaCallout').style.display = '';
+  } else {
+    deltaEl.textContent = '—';
+    deltaSubEl.innerHTML = 'Move the debt sliders above to see how non-dilutive capital changes your outcome.';
+    if (!hasDebt) {
+      document.getElementById('deltaCallout').style.display = '';
+    }
+  }
+
+  drawOwnershipChart();
+  drawWaterfallChart();
+  drawSankey();
+}
+
+// ── Event Bindings ──
+// Sector buttons
+document.querySelectorAll('.sector-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    sector = btn.dataset.sector;
+    rounds = JSON.parse(JSON.stringify(SECTORS[sector].rounds));
+    debtMix = rounds.map(() => 0);
+    debtTypes = rounds.map((_, i) => i < 2 ? 'equipment' : i === 2 ? 'venture' : 'project');
+    update();
+  });
 });
 
-// ── Master update ──
-function update() {
-  drawRoundChart();
-  drawExitChart();
-  drawStrip();
-  writeURL();
-
-  let rDisplay, rLowDisplay, rHighDisplay;
-
-  if (rangeMode) {
-    rLowDisplay = calcRate(amount, valuation, exitValHigh, exitTime); // higher exit = lower rate
-    rHighDisplay = calcRate(amount, valuation, exitValLow, exitTime); // lower exit = higher rate
-  } else {
-    rDisplay = calcRate(amount, valuation, exitVal, exitTime);
+// Add round
+document.getElementById('addRoundBtn').addEventListener('click', () => {
+  const lastRound = rounds[rounds.length - 1];
+  const nextNames = ['Series D', 'Series E', 'Series F', 'Growth'];
+  const existingNames = new Set(rounds.map(r => r.name));
+  let name = 'New Round';
+  for (const n of nextNames) {
+    if (!existingNames.has(n)) { name = n; break; }
   }
-
-  const el = document.getElementById('rateValue');
-  const comp = document.getElementById('rateComparison');
-  const stickyRateEl = document.getElementById('stickyRate');
-  const stickyCtxEl = document.getElementById('stickyContext');
-
-  if (rangeMode) {
-    if (rLowDisplay === null || rHighDisplay === null || !isFinite(rLowDisplay) || !isFinite(rHighDisplay)) {
-      el.textContent = '\u2014';
-      el.className = 'rate-value';
-      comp.textContent = '';
-      stickyRateEl.textContent = '\u2014';
-      stickyRateEl.className = 'sticky-rate';
-      stickyCtxEl.textContent = '';
-    } else {
-      const lowText = (rLowDisplay * 100).toFixed(1) + '%';
-      const highText = (rHighDisplay * 100).toFixed(1) + '%';
-      const pctText = lowText + ' – ' + highText;
-      el.textContent = pctText;
-      el.className = 'rate-value ' + rateClass(rHighDisplay);
-      stickyRateEl.textContent = pctText;
-      stickyRateEl.className = 'sticky-rate ' + rateClass(rHighDisplay);
-
-      const postMoney = valuation + amount;
-      const investorReturnLow = exitValLow * (amount / postMoney);
-      const investorReturnHigh = exitValHigh * (amount / postMoney);
-      const detailText = rateContext(rHighDisplay) +
-        ' Investor puts in <strong>' + fmt(amount) + '</strong>, gets back <strong>' +
-        fmt(Math.round(investorReturnLow)) + '\u2013' + fmt(Math.round(investorReturnHigh)) + '</strong>.';
-      comp.innerHTML = detailText.replace(' Investor', '<br>Investor');
-      stickyCtxEl.innerHTML = detailText;
-    }
-  } else {
-    if (rDisplay === null || !isFinite(rDisplay)) {
-      el.textContent = '\u2014';
-      el.className = 'rate-value';
-      comp.textContent = '';
-      stickyRateEl.textContent = '\u2014';
-      stickyRateEl.className = 'sticky-rate';
-      stickyCtxEl.textContent = '';
-    } else {
-      const pctText = (rDisplay * 100).toFixed(1) + '%';
-      el.textContent = pctText;
-      el.className = 'rate-value ' + rateClass(rDisplay);
-      stickyRateEl.textContent = pctText;
-      stickyRateEl.className = 'sticky-rate ' + rateClass(rDisplay);
-      const postMoney = valuation + amount;
-      const investorReturn = exitVal * (amount / postMoney);
-      const detailText = rateContext(rDisplay) +
-        ' Investor puts in <strong>' + fmt(amount) + '</strong>, gets back <strong>' +
-        fmt(Math.round(investorReturn)) + '</strong> \u2014 a <strong>' +
-        (investorReturn / amount).toFixed(1) + 'x</strong> return.';
-      comp.innerHTML = detailText.replace(' Investor', '<br>Investor');
-      stickyCtxEl.innerHTML = detailText;
-    }
-  }
-
-  const desc = document.querySelector('meta[property="og:description"]');
-  if (desc) {
-    const r = rangeMode ? rHighDisplay : rDisplay;
-    if (r !== null && isFinite(r)) {
-      desc.setAttribute('content', 'Raising ' + fmt(amount) + ' at ' + fmt(valuation) + ' pre-money = ' + (r * 100).toFixed(1) + '% effective APR.');
-    }
-  }
-}
-
-// ── Drag interaction ──
-function makeDraggable(wrapId, canvasId, xRange, yRange, xLog, yLog, onMove) {
-  const wrap = document.getElementById(wrapId);
-  const canvas = document.getElementById(canvasId);
-  let dragging = false;
-
-  function handlePointer(e) {
-    const rect = canvas.getBoundingClientRect();
-    const area = chartArea(rect.width, rect.height);
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const xVal = pixelToVal(mx, xRange[0], xRange[1], area.x, area.w, xLog);
-    const yVal = pixelToVal(area.h - (my - area.y), yRange[0], yRange[1], 0, area.h, yLog);
-    onMove(
-      Math.max(xRange[0], Math.min(xRange[1], xVal)),
-      Math.max(yRange[0], Math.min(yRange[1], yVal))
-    );
-    update();
-  }
-
-  wrap.addEventListener('pointerdown', (e) => {
-    dragging = true;
-    wrap.setPointerCapture(e.pointerId);
-    handlePointer(e);
+  rounds.push({
+    name,
+    amount: Math.round(lastRound.amount * 2),
+    preMoney: Math.round(lastRound.preMoney * 2.5),
+    gap: 2,
   });
-  wrap.addEventListener('pointermove', (e) => { if (dragging) handlePointer(e); });
-  wrap.addEventListener('pointerup', () => { dragging = false; });
-  wrap.addEventListener('pointercancel', () => { dragging = false; });
-}
-
-function snapAmount(v) {
-  if (v < 1) return Math.round(v * 4) / 4; // 250K steps
-  return Math.round(v * 2) / 2;
-}
-function snapVal(v) { return Math.round(v); }
-function snapTime(v) { return Math.round(v); }
-function snapExit(v) {
-  if (v < 50) return Math.round(v);
-  if (v < 200) return Math.round(v / 5) * 5;
-  if (v < 1000) return Math.round(v / 10) * 10;
-  return Math.round(v / 50) * 50;
-}
-
-makeDraggable('roundWrap', 'roundChart', round_xRange, round_yRange, 'sqrt', 'sqrt',
-  (x, y) => { amount = snapAmount(x); valuation = snapVal(y); });
-
-// Exit chart drag — handle range mode
-(function() {
-  const wrap = document.getElementById('exitWrap');
-  const canvas = document.getElementById('exitChart');
-  let dragging = false;
-  let dragTarget = null; // 'low', 'high', or 'single'
-
-  function getArea() {
-    const rect = canvas.getBoundingClientRect();
-    return { area: chartArea(rect.width, rect.height), rect };
-  }
-
-  function handlePointer(e) {
-    const { area, rect } = getArea();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const xVal = Math.max(exit_xRange[0], Math.min(exit_xRange[1],
-      pixelToVal(mx, exit_xRange[0], exit_xRange[1], area.x, area.w, false)));
-    const yVal = Math.max(exit_yRange[0], Math.min(exit_yRange[1],
-      pixelToVal(area.h - (my - area.y), exit_yRange[0], exit_yRange[1], 0, area.h, true)));
-
-    exitTime = snapTime(xVal);
-
-    if (rangeMode) {
-      if (dragTarget === null) {
-        // Determine which dot is closer
-        const pyLow = area.y + area.h - valToPixel(exitValLow, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-        const pyHigh = area.y + area.h - valToPixel(exitValHigh, exit_yRange[0], exit_yRange[1], 0, area.h, true);
-        const distLow = Math.abs(my - pyLow);
-        const distHigh = Math.abs(my - pyHigh);
-        dragTarget = distLow < distHigh ? 'low' : 'high';
-      }
-      if (dragTarget === 'low') {
-        exitValLow = Math.min(snapExit(yVal), exitValHigh - 1);
-      } else {
-        exitValHigh = Math.max(snapExit(yVal), exitValLow + 1);
-      }
-    } else {
-      exitVal = snapExit(yVal);
-    }
-    update();
-  }
-
-  wrap.addEventListener('pointerdown', (e) => {
-    dragging = true;
-    dragTarget = null;
-    wrap.setPointerCapture(e.pointerId);
-    handlePointer(e);
-  });
-  wrap.addEventListener('pointermove', (e) => { if (dragging) handlePointer(e); });
-  wrap.addEventListener('pointerup', () => { dragging = false; dragTarget = null; });
-  wrap.addEventListener('pointercancel', () => { dragging = false; dragTarget = null; });
-})();
-
-// Range toggle
-document.getElementById('rangeToggle').addEventListener('click', () => {
-  rangeMode = !rangeMode;
-  document.getElementById('rangeToggle').classList.toggle('active', rangeMode);
-  if (rangeMode) {
-    // Initialize range from current point value
-    exitValLow = Math.max(exit_yRange[0], snapExit(exitVal * 0.5));
-    exitValHigh = Math.min(exit_yRange[1], snapExit(exitVal * 2));
-  } else {
-    // Collapse range to midpoint
-    exitVal = snapExit((exitValLow + exitValHigh) / 2);
-  }
+  debtMix.push(0);
+  debtTypes.push('project');
   update();
 });
 
-// Math toggle
-document.getElementById('mathToggle').addEventListener('click', () => {
-  document.getElementById('mathContent').classList.toggle('open');
-  document.getElementById('mathArrow').classList.toggle('open');
+// Exit slider
+document.getElementById('exitSlider').addEventListener('input', (e) => {
+  exitValue = parseInt(e.target.value);
+  update();
 });
 
-// Sticky bar
-const rateDisplayEl = document.getElementById('rateDisplay');
-const stickyBar = document.getElementById('stickyBar');
-let stickyVisible = false;
-function checkSticky() {
-  const show = rateDisplayEl.getBoundingClientRect().top < -20;
-  if (show !== stickyVisible) {
-    stickyVisible = show;
-    stickyBar.classList.toggle('visible', show);
-  }
-}
-window.addEventListener('scroll', checkSticky, { passive: true });
+// Sankey toggle
+document.querySelectorAll('.sankey-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.sankey-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    sankeyView = pill.dataset.view;
+    drawSankey();
+  });
+});
 
-window.addEventListener('resize', update);
-renderScenarios();
+// Resize
+window.addEventListener('resize', () => {
+  drawOwnershipChart();
+  drawWaterfallChart();
+  drawSankey();
+});
+
+// ── Init ──
 update();
 </script>
 </body>
